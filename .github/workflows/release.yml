@@ -28,7 +28,8 @@ jobs:
             chmod +x ".aurea-ci/${script}"
           done
       - name: Validate commit messages
-        env: { BEFORE_SHA: ${{ github.event.before }} }
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
         run: |
           set -euo pipefail
           range="HEAD~1..HEAD"
