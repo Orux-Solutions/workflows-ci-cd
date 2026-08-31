@@ -38,6 +38,12 @@ jobs:
       - name: Test shared release scripts
         if: inputs.release-script-test
         run: |
-          curl --fail --silent --show-error --location https://raw.githubusercontent.com/aurea-io/aurea-ci/main/scripts/test-release-scripts.sh --output /tmp/test-release-scripts.sh
-          chmod +x /tmp/test-release-scripts.sh
-          /tmp/test-release-scripts.sh
+          set -euo pipefail
+          mkdir -p /tmp/aurea-ci
+          for script in calculate-version.sh validate-commits.sh test-release-scripts.sh; do
+            curl --fail --silent --show-error --location \
+              "https://raw.githubusercontent.com/aurea-io/aurea-ci/main/scripts/${script}" \
+              --output "/tmp/aurea-ci/${script}"
+            chmod +x "/tmp/aurea-ci/${script}"
+          done
+          /tmp/aurea-ci/test-release-scripts.sh
