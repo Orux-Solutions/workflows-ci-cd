@@ -58,12 +58,12 @@ jobs:
       - name: Run application checks
         if: inputs.project-type == 'node-pages'
         run: npm run check
-      - name: Run tests
-        if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-pages'
-        run: npm test
       - name: Generate Prisma client
         if: inputs.project-type == 'node-backend'
         run: npx --no-install prisma generate
+      - name: Run tests
+        if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-pages'
+        run: npm test
       - name: Run backend coverage
         if: inputs.project-type == 'node-backend'
         run: npm run test:cov --if-present

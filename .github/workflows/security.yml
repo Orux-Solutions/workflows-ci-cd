@@ -42,4 +42,15 @@ jobs:
             --output /tmp/gitleaks.tar.gz
           tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
           sudo install /tmp/gitleaks /usr/local/bin/gitleaks
-      - run: gitleaks git --redact --exit-code 1
+      - name: Scan changed commits for secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            range="${{ github.event.pull_request.base.sha }}..${GITHUB_SHA}"
+          elif [[ -n "${{ github.event.before }}" && "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
+            range="${{ github.event.before }}..${GITHUB_SHA}"
+          else
+            range="HEAD~1..HEAD"
+          fi
+          gitleaks git --redact --exit-code 1 --log-opts="${range}"
