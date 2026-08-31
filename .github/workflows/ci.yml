@@ -17,6 +17,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { persist-credentials: false }
+      - name: Load shared CI scripts
+        uses: actions/checkout@v4
+        with:
+          repository: aurea-io/aurea-ci
+          ref: v1
+          path: .aurea-ci
+          token: ${{ github.token }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
@@ -39,11 +47,4 @@ jobs:
         if: inputs.release-script-test
         run: |
           set -euo pipefail
-          mkdir -p /tmp/aurea-ci
-          for script in calculate-version.sh validate-commits.sh test-release-scripts.sh; do
-            curl --fail --silent --show-error --location \
-              "https://raw.githubusercontent.com/aurea-io/aurea-ci/main/scripts/${script}" \
-              --output "/tmp/aurea-ci/${script}"
-            chmod +x "/tmp/aurea-ci/${script}"
-          done
-          /tmp/aurea-ci/test-release-scripts.sh
+          .aurea-ci/scripts/test-release-scripts.sh

@@ -7,8 +7,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0, persist-credentials: false }
+      - name: Load shared CI scripts
+        uses: actions/checkout@v4
+        with:
+          repository: aurea-io/aurea-ci
+          ref: v1
+          path: .aurea-ci
+          token: ${{ github.token }}
+          persist-credentials: false
       - name: Validate commit messages
-        run: |
-          bash <(curl --fail --silent --show-error --location \
-            https://raw.githubusercontent.com/aurea-io/aurea-ci/main/scripts/validate-commits.sh) \
-            "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+        run: .aurea-ci/scripts/validate-commits.sh "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
