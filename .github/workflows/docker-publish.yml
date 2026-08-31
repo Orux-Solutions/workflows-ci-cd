@@ -38,7 +38,7 @@ jobs:
           cache-to: type=gha,mode=max
   notify-telegram:
     needs: publish
-    if: ${{ needs.publish.result == 'success' && (secrets.TELEGRAM_BOT_TOKEN != '' || secrets.TELEGRAM_CHAT_ID != '') }}
+    if: ${{ needs.publish.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Notify Telegram
@@ -56,7 +56,7 @@ jobs:
           done
   notify-discord:
     needs: publish
-    if: ${{ needs.publish.result == 'success' && (secrets.DISCORD_BOT_TOKEN != '' || secrets.DISCORD_WEBHOOK_URL != '') }}
+    if: ${{ needs.publish.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Notify Discord
