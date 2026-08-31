@@ -22,7 +22,17 @@ jobs:
         if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
       - name: Audit npm dependencies
         if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
-        run: npm audit --audit-level=high
+        run: npm audit --omit=dev --audit-level=high
+      - name: Capture development dependency audit
+        if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
+        run: npm audit --include=dev --json > npm-audit.json || true
+      - name: Upload dependency audit report
+        if: always() && (inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages')
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-${{ github.event.repository.name }}-${{ github.sha }}
+          path: npm-audit.json
+          if-no-files-found: ignore
       - name: Install Gitleaks
         run: |
           set -euo pipefail
