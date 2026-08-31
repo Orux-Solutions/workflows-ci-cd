@@ -1,0 +1,58 @@
+name: Aurea Release
+on:
+  workflow_call:
+    inputs:
+      docker-workflow: { type: string, default: docker-publish.yml }
+      version-input: { type: string, default: version }
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: release-main-${{ github.repository }}
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0, persist-credentials: true }
+      - name: Download shared release scripts
+        run: |
+          set -euo pipefail
+          mkdir -p .aurea-ci
+          for script in calculate-version.sh validate-commits.sh; do
+            curl --fail --silent --show-error --location \
+              "https://raw.githubusercontent.com/aurea-io/aurea-ci/main/scripts/${script}" \
+              --output ".aurea-ci/${script}"
+            chmod +x ".aurea-ci/${script}"
+          done
+      - name: Validate commit messages
+        env: { BEFORE_SHA: ${{ github.event.before }} }
+        run: |
+          set -euo pipefail
+          range="HEAD~1..HEAD"
+          if [[ -n "${BEFORE_SHA}" && "${BEFORE_SHA}" != "0000000000000000000000000000000000000000" ]]; then range="${BEFORE_SHA}..${GITHUB_SHA}"; fi
+          .aurea-ci/validate-commits.sh "${range}"
+      - name: Calculate next version
+        id: version
+        run: |
+          set -euo pipefail
+          version=$(.aurea-ci/calculate-version.sh)
+          if [[ -z "${version}" ]]; then echo "release=false" >> "${GITHUB_OUTPUT}"; exit 0; fi
+          echo "release=true" >> "${GITHUB_OUTPUT}"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+      - name: Create tag and GitHub release
+        if: steps.version.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          tag="v${VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${tag}" "${GITHUB_SHA}" -m "Release ${tag}"
+          git push origin "${tag}"
+          gh release create "${tag}" --target "${GITHUB_SHA}" --title "${tag}" --generate-notes
+          gh workflow run "${{ inputs.docker-workflow }}" --ref "${tag}" --field "${{ inputs.version-input }}=${VERSION}"

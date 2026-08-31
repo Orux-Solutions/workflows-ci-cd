@@ -1,0 +1,36 @@
+name: Aurea CI
+on:
+  workflow_call:
+    inputs:
+      node-version: { type: string, default: '22' }
+      install-command: { type: string, default: npm ci --ignore-scripts }
+      check-command: { type: string, default: '' }
+      test-command: { type: string, default: '' }
+      build-command: { type: string, default: '' }
+      docker-build: { type: boolean, default: false }
+permissions: { contents: read }
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - name: Install dependencies
+        run: ${{ inputs.install-command }}
+      - name: Check
+        if: inputs.check-command != ''
+        run: ${{ inputs.check-command }}
+      - name: Test
+        if: inputs.test-command != ''
+        run: ${{ inputs.test-command }}
+      - name: Build
+        if: inputs.build-command != ''
+        run: ${{ inputs.build-command }}
+      - name: Build Docker image
+        if: inputs.docker-build
+        run: docker build --tag "${{ github.event.repository.name }}:test" .
