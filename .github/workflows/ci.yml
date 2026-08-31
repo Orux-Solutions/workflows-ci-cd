@@ -8,6 +8,7 @@ on:
       test-command: { type: string, default: '' }
       build-command: { type: string, default: '' }
       docker-build: { type: boolean, default: false }
+      release-script-test: { type: boolean, default: false }
 permissions: { contents: read }
 jobs:
   validate:
@@ -34,3 +35,9 @@ jobs:
       - name: Build Docker image
         if: inputs.docker-build
         run: docker build --tag "${{ github.event.repository.name }}:test" .
+      - name: Test shared release scripts
+        if: inputs.release-script-test
+        run: |
+          curl --fail --silent --show-error --location https://raw.githubusercontent.com/aurea-io/aurea-ci/main/scripts/test-release-scripts.sh --output /tmp/test-release-scripts.sh
+          chmod +x /tmp/test-release-scripts.sh
+          /tmp/test-release-scripts.sh

@@ -2,7 +2,7 @@ name: Aurea Release
 on:
   workflow_call:
     inputs:
-      docker-workflow: { type: string, default: docker-publish.yml }
+      docker-workflow: { type: string, default: '' }
       version-input: { type: string, default: version }
 permissions:
   contents: write
@@ -55,4 +55,6 @@ jobs:
           git tag -a "${tag}" "${GITHUB_SHA}" -m "Release ${tag}"
           git push origin "${tag}"
           gh release create "${tag}" --target "${GITHUB_SHA}" --title "${tag}" --generate-notes
-          gh workflow run "${{ inputs.docker-workflow }}" --ref "${tag}" --field "${{ inputs.version-input }}=${VERSION}"
+          if [[ -n "${{ inputs.docker-workflow }}" ]]; then
+            gh workflow run "${{ inputs.docker-workflow }}" --ref "${tag}" --field "${{ inputs.version-input }}=${VERSION}"
+          fi
