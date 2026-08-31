@@ -1,23 +1,33 @@
 name: Aurea CI
+
 on:
   workflow_call:
     inputs:
-      node-version: { type: string, default: '22' }
-      install-command: { type: string, default: npm ci --ignore-scripts }
-      check-command: { type: string, default: '' }
-      test-command: { type: string, default: '' }
-      build-command: { type: string, default: '' }
-      docker-build: { type: boolean, default: false }
-      release-script-test: { type: boolean, default: false }
-permissions: { contents: read }
+      project-type:
+        description: Supported project profile
+        type: string
+        required: false
+        default: node-frontend
+      node-version:
+        description: Node.js major version
+        type: string
+        required: false
+        default: '22'
+
+permissions:
+  contents: read
+
 jobs:
   validate:
+    name: Validate ${{ inputs.project-type }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-        with: { persist-credentials: false }
-      - name: Load shared CI scripts
+      - name: Checkout application
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout shared CI
         uses: actions/checkout@v4
         with:
           repository: aurea-io/aurea-ci
@@ -25,26 +35,35 @@ jobs:
           path: .aurea-ci
           token: ${{ github.token }}
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - name: Validate project profile
+        env:
+          PROJECT_TYPE: ${{ inputs.project-type }}
+        run: |
+          case "${PROJECT_TYPE}" in
+            node-backend|node-frontend|node-pages) ;;
+            *) echo "Perfil desconocido: ${PROJECT_TYPE}" >&2; exit 1 ;;
+          esac
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
           cache: npm
       - name: Install dependencies
-        run: ${{ inputs.install-command }}
-      - name: Check
-        if: inputs.check-command != ''
-        run: ${{ inputs.check-command }}
-      - name: Test
-        if: inputs.test-command != ''
-        run: ${{ inputs.test-command }}
-      - name: Build
-        if: inputs.build-command != ''
-        run: ${{ inputs.build-command }}
+        run: npm ci --ignore-scripts
+      - name: Run backend lint
+        if: inputs.project-type == 'node-backend'
+        run: npm run lint
+      - name: Run application checks
+        if: inputs.project-type == 'node-pages'
+        run: npm run check
+      - name: Run tests
+        if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-pages'
+        run: npm test
+      - name: Build application
+        if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend'
+        run: npm run build
       - name: Build Docker image
-        if: inputs.docker-build
+        if: inputs.project-type == 'node-pages'
         run: docker build --tag "${{ github.event.repository.name }}:test" .
       - name: Test shared release scripts
-        if: inputs.release-script-test
-        run: |
-          set -euo pipefail
-          .aurea-ci/scripts/test-release-scripts.sh
+        run: .aurea-ci/scripts/test-release-scripts.sh
