@@ -18,10 +18,15 @@ assert_version 0.1.0
 git -C "${test_root}" tag v0.1.0
 git -C "${test_root}" commit --allow-empty -qm 'fix: repair release trigger'
 assert_version 0.1.1
-git -C "${test_root}" commit --allow-empty -qm 'feat: add release dispatch'
-assert_version 0.2.0
-git -C "${test_root}" commit --allow-empty -qm 'feat!: change release contract'
+for feature in $(seq 1 10); do
+  git -C "${test_root}" commit --allow-empty -qm "feat: add capability ${feature}"
+done
 assert_version 1.0.0
+git -C "${test_root}" tag v1.0.0
+git -C "${test_root}" commit --allow-empty -qm 'feat: add release dispatch'
+assert_version 1.1.0
+git -C "${test_root}" commit --allow-empty -qm 'feat!: change release contract'
+assert_version 2.0.0
 git -C "${test_root}" commit --allow-empty -qm 'invalid release message'
 if (cd "${test_root}" && "${script_root}/validate-commits.sh" HEAD~1..HEAD); then
   echo 'Expected invalid commit to fail validation' >&2
