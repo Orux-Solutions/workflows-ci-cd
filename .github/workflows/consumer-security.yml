@@ -1,0 +1,10 @@
+name: Shared CI security
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  security:
+    uses: aurea-io/aurea-ci/.github/workflows/security.yml@v1
+    with:
+      project-type: shared-ci

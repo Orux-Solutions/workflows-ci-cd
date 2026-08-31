@@ -1,0 +1,15 @@
+name: Deploy notification
+on:
+  workflow_run:
+    workflows: [Deploy]
+    types: [completed]
+jobs:
+  notify:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    uses: aurea-io/aurea-ci/.github/workflows/notify.yml@v1
+    with:
+      event-type: deploy
+      environment: production
+      deploy-url: ${{ vars.AUREA_DEPLOY_URL }}
+      source-commit: ${{ github.event.workflow_run.head_sha }}
+    secrets: inherit

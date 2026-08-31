@@ -27,6 +27,25 @@ Perfiles disponibles:
 
 Además, cada repo agrega los workflows `security.yml`, `commit-policy.yml` y `release.yml` apuntando a `@v1`. Sus detalles viven únicamente aquí.
 
+## Notificaciones cross-repo
+
+Las notificaciones de imágenes publicadas y despliegues se centralizan en
+`.github/workflows/notify.yml`. Los repositorios consumidores sólo deben llamar
+al workflow reutilizable con `secrets: inherit`; los valores deben existir como
+secretos de la organización `aurea-io`, nunca en el código.
+
+Secretos soportados:
+
+- `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID`.
+- `DISCORD_BOT_TOKEN` y `DISCORD_CHANNEL_ID`, o `DISCORD_WEBHOOK_URL`.
+
+Variables opcionales de organización:
+
+- `AUREA_DEPLOY_URL`: URL pública común o por repositorio para incluir en avisos.
+
+Los repos nuevos deben copiar únicamente los callers documentados en
+`docs/consumer-workflows.yml` y apuntar a una referencia versionada (`@v1`).
+
 ## Versionado automático
 
 El autotagger usa Conventional Commits:

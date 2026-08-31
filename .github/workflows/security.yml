@@ -1,5 +1,12 @@
 name: Aurea Security
-on: { workflow_call: {} }
+on:
+  workflow_call:
+    inputs:
+      project-type:
+        description: Project profile
+        required: false
+        default: node-frontend
+        type: string
 permissions: { contents: read }
 jobs:
   repository-security:
@@ -9,9 +16,12 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0, persist-credentials: false }
       - uses: actions/setup-node@v4
+        if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
         with: { node-version: '22', cache: npm }
       - run: npm ci --ignore-scripts
+        if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
       - name: Audit npm dependencies
+        if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
         run: npm audit --audit-level=high
       - name: Install Gitleaks
         run: |
