@@ -39,7 +39,7 @@ jobs:
   notify:
     needs: publish
     if: ${{ needs.publish.result == 'success' }}
-    uses: aurea-io/aurea-ci/.github/workflows/notify.yml@v1
+    uses: aurea-io/aurea-ci/.github/workflows/notify.yml@main
     with:
       event-type: image
       image: ${{ inputs.image }}

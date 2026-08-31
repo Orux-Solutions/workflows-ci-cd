@@ -1,0 +1,16 @@
+name: Shared CI self-test
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test shared release scripts
+        run: ./scripts/test-release-scripts.sh

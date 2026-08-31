@@ -1,6 +1,0 @@
-name: Shared CI commit policy
-on:
-  pull_request:
-jobs:
-  conventional-commits:
-    uses: aurea-io/aurea-ci/.github/workflows/commit-policy.yml@v1
