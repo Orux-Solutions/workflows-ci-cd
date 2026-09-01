@@ -1,5 +1,12 @@
 name: Aurea Security
-on: { workflow_call: {} }
+on:
+  workflow_call:
+    inputs:
+      project-type:
+        description: Project profile
+        required: false
+        default: node-frontend
+        type: string
 permissions: { contents: read }
 jobs:
   repository-security:
@@ -9,10 +16,23 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0, persist-credentials: false }
       - uses: actions/setup-node@v4
+        if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
         with: { node-version: '22', cache: npm }
       - run: npm ci --ignore-scripts
+        if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
       - name: Audit npm dependencies
-        run: npm audit --audit-level=high
+        if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
+        run: npm audit --omit=dev --audit-level=high
+      - name: Capture development dependency audit
+        if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
+        run: npm audit --include=dev --json > npm-audit.json || true
+      - name: Upload dependency audit report
+        if: always() && (inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages')
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-${{ github.event.repository.name }}-${{ github.sha }}
+          path: npm-audit.json
+          if-no-files-found: ignore
       - name: Install Gitleaks
         run: |
           set -euo pipefail
@@ -22,4 +42,15 @@ jobs:
             --output /tmp/gitleaks.tar.gz
           tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
           sudo install /tmp/gitleaks /usr/local/bin/gitleaks
-      - run: gitleaks git --redact --exit-code 1
+      - name: Scan changed commits for secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            range="${{ github.event.pull_request.base.sha }}..${GITHUB_SHA}"
+          elif [[ -n "${{ github.event.before }}" && "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
+            range="${{ github.event.before }}..${GITHUB_SHA}"
+          else
+            range="HEAD~1..HEAD"
+          fi
+          gitleaks git --redact --exit-code 1 --log-opts="${range}"

@@ -1,0 +1,60 @@
+# Plantillas mínimas para cada repositorio Aurea.
+# Copiar los jobs necesarios a .github/workflows/ y mantener la lógica en aurea-ci.
+
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  ci:
+    uses: aurea-io/aurea-ci/.github/workflows/ci.yml@main
+    with:
+      # node-backend | node-frontend | node-pages | docs | shared-ci
+      project-type: node-frontend
+
+---
+
+name: Security
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  security:
+    uses: aurea-io/aurea-ci/.github/workflows/security.yml@main
+    with:
+      project-type: node-frontend
+
+---
+
+name: Release
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+jobs:
+  release:
+    uses: aurea-io/aurea-ci/.github/workflows/release.yml@main
+    secrets: inherit
+
+---
+
+name: Deploy notification
+on:
+  workflow_run:
+    workflows: [Deploy]
+    types: [completed]
+jobs:
+  notify:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    uses: aurea-io/aurea-ci/.github/workflows/notify.yml@main
+    with:
+      event-type: deploy
+      environment: production
+      deploy-url: ${{ vars.AUREA_DEPLOY_URL }}
+      source-commit: ${{ github.event.workflow_run.head_sha }}
+    secrets: inherit

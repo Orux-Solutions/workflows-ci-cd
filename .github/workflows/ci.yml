@@ -40,15 +40,17 @@ jobs:
           PROJECT_TYPE: ${{ inputs.project-type }}
         run: |
           case "${PROJECT_TYPE}" in
-            node-backend|node-frontend|node-pages) ;;
+            node-backend|node-frontend|node-pages|docs|shared-ci) ;;
             *) echo "Perfil desconocido: ${PROJECT_TYPE}" >&2; exit 1 ;;
           esac
       - name: Setup Node.js
+        if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
           cache: npm
       - name: Install dependencies
+        if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
         run: npm ci --ignore-scripts
       - name: Run backend lint
         if: inputs.project-type == 'node-backend'
@@ -56,9 +58,22 @@ jobs:
       - name: Run application checks
         if: inputs.project-type == 'node-pages'
         run: npm run check
+      - name: Generate Prisma client
+        if: inputs.project-type == 'node-backend'
+        run: npx --no-install prisma generate
       - name: Run tests
         if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-pages'
         run: npm test
+      - name: Run backend coverage
+        if: inputs.project-type == 'node-backend'
+        run: npm run test:cov --if-present
+      - name: Upload coverage artifact
+        if: always() && inputs.project-type == 'node-backend'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ github.event.repository.name }}-${{ github.sha }}
+          path: coverage/
+          if-no-files-found: ignore
       - name: Build application
         if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend'
         run: npm run build
@@ -66,4 +81,5 @@ jobs:
         if: inputs.project-type == 'node-pages'
         run: docker build --tag "${{ github.event.repository.name }}:test" .
       - name: Test shared release scripts
+        if: inputs.project-type == 'shared-ci' || inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
         run: .aurea-ci/scripts/test-release-scripts.sh

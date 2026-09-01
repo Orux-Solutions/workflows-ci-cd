@@ -36,40 +36,12 @@ jobs:
           build-args: AUREA_COMMIT_ID=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-  notify-telegram:
+  notify:
     needs: publish
     if: ${{ needs.publish.result == 'success' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Notify Telegram
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          set -euo pipefail
-          [[ -z "${TELEGRAM_BOT_TOKEN}" || -z "${TELEGRAM_CHAT_ID}" ]] && exit 0
-          message=$(printf 'Aurea publicada 🚀\nRepo: %s\nVersión: %s\nCommit: %.7s' "${GITHUB_REPOSITORY}" "${{ inputs.version }}" "${GITHUB_SHA}")
-          IFS='|' read -ra ids <<< "${TELEGRAM_CHAT_ID}"
-          for chat_id in "${ids[@]}"; do
-            chat_id="$(echo "${chat_id}" | xargs)"; [[ -z "${chat_id}" ]] && continue
-            curl --fail --silent --show-error --request POST --data-urlencode "chat_id=${chat_id}" --data-urlencode "text=${message}" "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
-          done
-  notify-discord:
-    needs: publish
-    if: ${{ needs.publish.result == 'success' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Notify Discord
-        env:
-          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: |
-          set -euo pipefail
-          message=$(printf 'Aurea publicada 🚀\nRepo: %s\nVersión: %s\nCommit: %.7s' "${GITHUB_REPOSITORY}" "${{ inputs.version }}" "${GITHUB_SHA}")
-          payload="$(printf '%s' "${message}" | python3 -c 'import json,sys; print(json.dumps({"content": sys.stdin.read()}))')"
-          if [[ -n "${DISCORD_BOT_TOKEN}" && -n "${DISCORD_CHANNEL_ID}" ]]; then
-            curl --fail --silent --show-error --request POST --header "Authorization: Bot ${DISCORD_BOT_TOKEN}" --header 'content-type: application/json' --data "${payload}" "https://discord.com/api/v10/channels/${DISCORD_CHANNEL_ID}/messages"
-          elif [[ -n "${DISCORD_WEBHOOK_URL}" ]]; then
-            curl --fail --silent --show-error --request POST --header 'content-type: application/json' --data "${payload}" "${DISCORD_WEBHOOK_URL}"
-          fi
+    uses: aurea-io/aurea-ci/.github/workflows/notify.yml@main
+    with:
+      event-type: image
+      image: ${{ inputs.image }}
+      version: ${{ inputs.version }}
+    secrets: inherit

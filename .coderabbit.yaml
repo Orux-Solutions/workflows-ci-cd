@@ -1,0 +1,17 @@
+# Política compartida de revisión automática para Aurea.
+language: es-AR
+reviews:
+  profile: chill
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    auto_pause_after_reviewed_commits: 0
+    drafts: false
+    base_branches:
+      - "main"
+    labels: []
+    ignore_title_keywords: []
+  request_changes_workflow: true
+  poem: false
+chat:
+  auto_reply: true
