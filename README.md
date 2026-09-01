@@ -14,7 +14,7 @@ on:
   push: { branches: [main] }
 jobs:
   ci:
-    uses: aurea-io/aurea-ci/.github/workflows/ci.yml@v1
+    uses: aurea-io/aurea-ci/.github/workflows/ci.yml@v2
     with:
       project-type: node-frontend
 ```
@@ -25,7 +25,7 @@ Perfiles disponibles:
 - `node-backend`: instala dependencias, ejecuta `npm run lint`, `npm test` y `npm run build`.
 - `node-pages`: instala dependencias, ejecuta `npm run check`, `npm test` y valida el Dockerfile.
 
-Además, cada repo agrega los workflows `security.yml`, `commit-policy.yml` y `release.yml` apuntando a `@v1`. Sus detalles viven únicamente aquí.
+Además, cada repo agrega los workflows `security.yml`, `commit-policy.yml` y `release.yml` apuntando a `@v2`. Sus detalles viven únicamente aquí.
 
 ## Notificaciones cross-repo
 
@@ -44,7 +44,7 @@ Variables opcionales de organización:
 - `AUREA_DEPLOY_URL`: URL pública común o por repositorio para incluir en avisos.
 
 Los repos nuevos deben copiar únicamente los callers documentados en
-`docs/consumer-workflows.yml` y apuntar a una referencia versionada (`@v1`).
+`docs/consumer-workflows.yml` y apuntar a una referencia versionada (`@v2`).
 
 ## Versionado automático
 

@@ -8,7 +8,7 @@ on:
     branches: [main]
 jobs:
   ci:
-    uses: aurea-io/aurea-ci/.github/workflows/ci.yml@main
+    uses: aurea-io/aurea-ci/.github/workflows/ci.yml@v2
     with:
       # node-backend | node-frontend | node-pages | docs | shared-ci
       project-type: node-frontend
@@ -22,7 +22,7 @@ on:
     branches: [main]
 jobs:
   security:
-    uses: aurea-io/aurea-ci/.github/workflows/security.yml@main
+    uses: aurea-io/aurea-ci/.github/workflows/security.yml@v2
     with:
       project-type: node-frontend
 
@@ -38,7 +38,7 @@ permissions:
   actions: write
 jobs:
   release:
-    uses: aurea-io/aurea-ci/.github/workflows/release.yml@main
+    uses: aurea-io/aurea-ci/.github/workflows/release.yml@v2
     secrets: inherit
 
 ---
@@ -51,7 +51,7 @@ on:
 jobs:
   notify:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    uses: aurea-io/aurea-ci/.github/workflows/notify.yml@main
+    uses: aurea-io/aurea-ci/.github/workflows/notify.yml@v2
     with:
       event-type: deploy
       environment: production

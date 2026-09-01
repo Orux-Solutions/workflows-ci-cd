@@ -2,12 +2,9 @@ name: Aurea Release
 on:
   workflow_call:
     inputs:
-      docker-workflow: { type: string, default: '' }
-      version-input: { type: string, default: version }
       deploy-url: { type: string, default: '' }
 permissions:
   contents: write
-  actions: write
 concurrency:
   group: release-main-${{ github.repository }}
   cancel-in-progress: false
@@ -57,9 +54,6 @@ jobs:
           notes="Release ${tag}\n\nCommit: ${GITHUB_SHA}"
           if [[ -n "${{ inputs.deploy-url }}" ]]; then notes+="\nDemo/deploy: ${{ inputs.deploy-url }}"; fi
           gh release create "${tag}" --target "${GITHUB_SHA}" --title "${tag}" --notes "${notes}" --generate-notes
-          if [[ -n "${{ inputs.docker-workflow }}" ]]; then
-            gh workflow run "${{ inputs.docker-workflow }}" --ref "${tag}" --field "${{ inputs.version-input }}=${VERSION}"
-          fi
           {
             echo "## Aurea release evidence"
             echo "- Version: ${tag}"

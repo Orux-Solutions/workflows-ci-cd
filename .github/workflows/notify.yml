@@ -32,6 +32,21 @@ on:
         required: false
         default: ''
         type: string
+      verify-result:
+        description: Verification job result for a deploy
+        required: false
+        default: ''
+        type: string
+      frontend-result:
+        description: Frontend deploy job result
+        required: false
+        default: ''
+        type: string
+      backend-result:
+        description: Backend deploy job result
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -53,6 +68,9 @@ jobs:
       ENVIRONMENT: ${{ inputs.environment }}
       DEPLOY_URL: ${{ inputs.deploy-url }}
       SOURCE_COMMIT: ${{ inputs.source-commit || github.sha }}
+      VERIFY_RESULT: ${{ inputs.verify-result }}
+      FRONTEND_RESULT: ${{ inputs.frontend-result }}
+      BACKEND_RESULT: ${{ inputs.backend-result }}
     steps:
       - name: Build notification message
         id: message
@@ -63,7 +81,9 @@ jobs:
           if [[ "${EVENT_TYPE}" == "image" ]]; then
             message="Aurea nueva imagen 🚀\nRepo: ${GITHUB_REPOSITORY}\nImagen: ${IMAGE}\nVersión: ${VERSION}\nCommit: ${short_commit}"
           else
-            message="Aurea nuevo deploy ✅\nRepo: ${GITHUB_REPOSITORY}\nEntorno: ${ENVIRONMENT}\nCommit: ${short_commit}"
+            result_icon="✅"
+            [[ "${VERIFY_RESULT}" != "success" || "${FRONTEND_RESULT}" != "success" || "${BACKEND_RESULT}" != "success" ]] && result_icon="❌"
+            message="Aurea deploy ${result_icon}\nRepo: ${GITHUB_REPOSITORY}\nEntorno: ${ENVIRONMENT}\nFrontend: ${FRONTEND_RESULT:-unknown}\nBackend: ${BACKEND_RESULT:-unknown}\nCommit: ${short_commit}"
             [[ -n "${DEPLOY_URL}" ]] && message+="\nURL: ${DEPLOY_URL}"
           fi
           {
@@ -73,6 +93,7 @@ jobs:
           } >> "${GITHUB_OUTPUT}"
       - name: Notify Telegram
         if: ${{ env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != '' }}
+        continue-on-error: true
         env:
           MESSAGE: ${{ steps.message.outputs.message }}
         shell: bash
@@ -89,6 +110,7 @@ jobs:
           done
       - name: Notify Discord
         if: ${{ (env.DISCORD_BOT_TOKEN != '' && env.DISCORD_CHANNEL_ID != '') || env.DISCORD_WEBHOOK_URL != '' }}
+        continue-on-error: true
         env:
           MESSAGE: ${{ steps.message.outputs.message }}
         shell: bash
