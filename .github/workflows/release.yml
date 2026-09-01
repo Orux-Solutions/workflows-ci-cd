@@ -4,6 +4,7 @@ on:
     inputs:
       docker-workflow: { type: string, default: '' }
       version-input: { type: string, default: version }
+      deploy-url: { type: string, default: '' }
 permissions:
   contents: write
   actions: write
@@ -53,7 +54,16 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "${tag}" "${GITHUB_SHA}" -m "Release ${tag}"
           git push origin "${tag}"
-          gh release create "${tag}" --target "${GITHUB_SHA}" --title "${tag}" --generate-notes
+          notes="Release ${tag}\n\nCommit: ${GITHUB_SHA}"
+          if [[ -n "${{ inputs.deploy-url }}" ]]; then notes+="\nDemo/deploy: ${{ inputs.deploy-url }}"; fi
+          gh release create "${tag}" --target "${GITHUB_SHA}" --title "${tag}" --notes "${notes}" --generate-notes
           if [[ -n "${{ inputs.docker-workflow }}" ]]; then
             gh workflow run "${{ inputs.docker-workflow }}" --ref "${tag}" --field "${{ inputs.version-input }}=${VERSION}"
           fi
+          {
+            echo "## Aurea release evidence"
+            echo "- Version: ${tag}"
+            echo "- Commit: ${GITHUB_SHA}"
+            if [[ -n "${{ inputs.deploy-url }}" ]]; then echo "- Demo/deploy: ${{ inputs.deploy-url }}"; fi
+            echo "- Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${tag}"
+          } >> "${GITHUB_STEP_SUMMARY}"

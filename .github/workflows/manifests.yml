@@ -1,0 +1,28 @@
+name: Aurea Manifest Validation
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  manifests:
+    name: Validate manifests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout application
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout shared CI
+        uses: actions/checkout@v4
+        with:
+          repository: aurea-io/aurea-ci
+          ref: main
+          path: .aurea-ci
+          token: ${{ github.token }}
+          persist-credentials: false
+      - name: Validate module manifests
+        run: .aurea-ci/scripts/validate-manifests.sh

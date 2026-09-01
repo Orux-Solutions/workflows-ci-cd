@@ -35,6 +35,12 @@ jobs:
           path: .aurea-ci
           token: ${{ github.token }}
           persist-credentials: false
+      - name: Validate module manifests (shared CI repository)
+        if: github.repository == 'aurea-io/aurea-ci'
+        run: scripts/validate-manifests.sh
+      - name: Validate module manifests (consumer repository)
+        if: github.repository != 'aurea-io/aurea-ci'
+        run: .aurea-ci/scripts/validate-manifests.sh
       - name: Validate project profile
         env:
           PROJECT_TYPE: ${{ inputs.project-type }}
