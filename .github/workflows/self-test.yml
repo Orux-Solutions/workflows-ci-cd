@@ -14,3 +14,5 @@ jobs:
           persist-credentials: false
       - name: Test shared release scripts
         run: ./scripts/test-release-scripts.sh
+      - name: Test manifest validation
+        run: ./scripts/test-manifest-validation.sh
