@@ -106,7 +106,7 @@ jobs:
           notes="Release ${TAG}\\n\\nCommit: ${GITHUB_SHA}"
           [[ -n "${DEPLOY_URL}" ]] && notes+="\\nDemo/deploy: ${DEPLOY_URL}"
           gh release create "${TAG}" --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" --title "${TAG}" --notes "${notes}" --generate-notes
-          gh workflow run "${DEPLOY_WORKFLOW}" --repo "${GITHUB_REPOSITORY}" --ref "${GITHUB_SHA}" -f "release-tag=${TAG}"
+          gh workflow run "${DEPLOY_WORKFLOW}" --repo "${GITHUB_REPOSITORY}" --ref main -f "release-tag=${TAG}"
           {
             echo "## Aurea release evidence"
             echo "- Version: ${TAG}"
