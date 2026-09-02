@@ -1,28 +1,37 @@
 name: Aurea Release
+
 on:
   workflow_call:
     inputs:
-      docker-workflow: { type: string, default: '' }
-      version-input: { type: string, default: version }
-      deploy-url: { type: string, default: '' }
+      deploy-url:
+        description: Optional deployed URL included in release evidence
+        required: false
+        default: ''
+        type: string
+
 permissions:
   contents: write
-  actions: write
+
 concurrency:
   group: release-main-${{ github.repository }}
   cancel-in-progress: false
+
 jobs:
-  release:
+  calculate-version:
+    name: Calculate and validate release
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      release: ${{ steps.version.outputs.release }}
+      version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0, persist-credentials: true }
+      - uses: actions/checkout@v5
+        with: { fetch-depth: 0, persist-credentials: false }
       - name: Load shared CI scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: aurea-io/aurea-ci
-          ref: main
+          ref: v3
           path: .aurea-ci
           token: ${{ github.token }}
           persist-credentials: false
@@ -32,38 +41,68 @@ jobs:
         run: |
           set -euo pipefail
           range="HEAD~1..HEAD"
-          if [[ -n "${BEFORE_SHA}" && "${BEFORE_SHA}" != "0000000000000000000000000000000000000000" ]]; then range="${BEFORE_SHA}..${GITHUB_SHA}"; fi
+          if [[ -n "${BEFORE_SHA}" && "${BEFORE_SHA}" != "0000000000000000000000000000000000000000" ]]; then range="${BEFORE_SHA}..HEAD"; fi
           .aurea-ci/scripts/validate-commits.sh "${range}"
       - name: Calculate next version
         id: version
         run: |
           set -euo pipefail
           version=$(.aurea-ci/scripts/calculate-version.sh)
-          if [[ -z "${version}" ]]; then echo "release=false" >> "${GITHUB_OUTPUT}"; exit 0; fi
-          echo "release=true" >> "${GITHUB_OUTPUT}"
+          if [[ -z "${version}" ]]; then
+            echo 'release=false' >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          echo 'release=true' >> "${GITHUB_OUTPUT}"
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
-      - name: Create tag and GitHub release
-        if: steps.version.outputs.release == 'true'
+
+  create-tag:
+    name: Create immutable release tag
+    needs: calculate-version
+    if: needs.calculate-version.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with: { fetch-depth: 0, persist-credentials: true }
+      - name: Create and push tag
+        id: tag
         env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ needs.calculate-version.outputs.version }}
         run: |
           set -euo pipefail
           tag="v${VERSION}"
+          if git show-ref --tags --verify --quiet "refs/tags/${tag}"; then
+            echo "Release tag ${tag} already exists; refusing to overwrite it." >&2
+            exit 1
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "${tag}" "${GITHUB_SHA}" -m "Release ${tag}"
           git push origin "${tag}"
-          notes="Release ${tag}\n\nCommit: ${GITHUB_SHA}"
-          if [[ -n "${{ inputs.deploy-url }}" ]]; then notes+="\nDemo/deploy: ${{ inputs.deploy-url }}"; fi
-          gh release create "${tag}" --target "${GITHUB_SHA}" --title "${tag}" --notes "${notes}" --generate-notes
-          if [[ -n "${{ inputs.docker-workflow }}" ]]; then
-            gh workflow run "${{ inputs.docker-workflow }}" --ref "${tag}" --field "${{ inputs.version-input }}=${VERSION}"
-          fi
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+
+  create-release:
+    name: Create GitHub release
+    needs: [calculate-version, create-tag]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.create-tag.outputs.tag }}
+          DEPLOY_URL: ${{ inputs.deploy-url }}
+        run: |
+          set -euo pipefail
+          notes="Release ${TAG}\\n\\nCommit: ${GITHUB_SHA}"
+          [[ -n "${DEPLOY_URL}" ]] && notes+="\\nDemo/deploy: ${DEPLOY_URL}"
+          gh release create "${TAG}" --target "${GITHUB_SHA}" --title "${TAG}" --notes "${notes}" --generate-notes
           {
             echo "## Aurea release evidence"
-            echo "- Version: ${tag}"
+            echo "- Version: ${TAG}"
             echo "- Commit: ${GITHUB_SHA}"
-            if [[ -n "${{ inputs.deploy-url }}" ]]; then echo "- Demo/deploy: ${{ inputs.deploy-url }}"; fi
-            echo "- Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${tag}"
+            [[ -n "${DEPLOY_URL}" ]] && echo "- Demo/deploy: ${DEPLOY_URL}"
+            echo "- Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
           } >> "${GITHUB_STEP_SUMMARY}"
