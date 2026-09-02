@@ -1,0 +1,62 @@
+name: Theme Service performance
+
+on:
+  workflow_dispatch:
+    inputs:
+      base-url:
+        description: Base URL of the deployed Theme Service
+        required: true
+        type: string
+      endpoint:
+        description: Relative endpoint to exercise
+        required: true
+        default: /api/theme
+        type: string
+      vus:
+        description: Concurrent virtual users
+        required: true
+        default: '20'
+        type: string
+      duration:
+        description: Test duration in seconds
+        required: true
+        default: '30'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    name: Measure p95/p99 and error rate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Run concurrency benchmark
+        run: |
+          node scripts/measure-theme-service.mjs \
+            --base-url '${{ inputs.base-url }}' \
+            --endpoint '${{ inputs.endpoint }}' \
+            --vus '${{ inputs.vus }}' \
+            --duration '${{ inputs.duration }}' \
+            | tee theme-service-performance.json
+      - name: Publish result summary
+        if: always()
+        run: |
+          {
+            echo '## Theme Service performance';
+            echo;
+            echo '```json';
+            cat theme-service-performance.json 2>/dev/null || true;
+            echo '```';
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload performance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: theme-service-performance
+          path: theme-service-performance.json
