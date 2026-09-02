@@ -8,8 +8,14 @@ on:
         required: false
         default: ''
         type: string
+      deploy-workflow:
+        description: Workflow to dispatch after publishing the release
+        required: false
+        default: deploy.yml
+        type: string
 
 permissions:
+  actions: write
   contents: write
 
 concurrency:
@@ -94,11 +100,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.create-tag.outputs.tag }}
           DEPLOY_URL: ${{ inputs.deploy-url }}
+          DEPLOY_WORKFLOW: ${{ inputs.deploy-workflow }}
         run: |
           set -euo pipefail
           notes="Release ${TAG}\\n\\nCommit: ${GITHUB_SHA}"
           [[ -n "${DEPLOY_URL}" ]] && notes+="\\nDemo/deploy: ${DEPLOY_URL}"
           gh release create "${TAG}" --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" --title "${TAG}" --notes "${notes}" --generate-notes
+          gh workflow run "${DEPLOY_WORKFLOW}" --repo "${GITHUB_REPOSITORY}" --ref "${GITHUB_SHA}" -f "release-tag=${TAG}"
           {
             echo "## Aurea release evidence"
             echo "- Version: ${TAG}"
