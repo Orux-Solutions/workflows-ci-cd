@@ -53,6 +53,15 @@ on:
         required: false
         default: ''
         type: string
+      discord-message-id:
+        description: Existing Discord message to update instead of creating a new one
+        required: false
+        default: ''
+        type: string
+    outputs:
+      discord-message-id:
+        description: Discord message ID created or updated by this workflow
+        value: ${{ jobs.notify.outputs.discord-message-id }}
 
 permissions:
   contents: read
@@ -77,6 +86,9 @@ jobs:
       STATUS: ${{ inputs.status }}
       REASON: ${{ inputs.reason }}
       COMMIT_MESSAGE: ${{ inputs.commit-message || github.event.head_commit.message || 'workflow dispatch' }}
+      DISCORD_MESSAGE_ID: ${{ inputs.discord-message-id }}
+    outputs:
+      discord-message-id: ${{ steps.discord.outputs.message-id }}
     steps:
       - name: Build notification message
         id: message
@@ -87,14 +99,16 @@ jobs:
           commit_message="${COMMIT_MESSAGE:-workflow dispatch}"
           commit_message="${commit_message%%$'\n'*}"
           commit_message="${commit_message//$'\r'/ }"
-          result_label="✅ exitoso"
-          [[ "${STATUS}" == "skipped" ]] && result_label="⏭️ omitido"
-          [[ "${STATUS}" == "failure" ]] && result_label="❌ fallido"
+          result_label="📦 Publicado"
+          [[ "${EVENT_TYPE}" == "deploy" && "${STATUS}" == "success" ]] && result_label="🚀 Publicado y deployado"
+          [[ "${EVENT_TYPE}" == "deploy" && "${STATUS}" == "failure" ]] && result_label="⚠️ Publicado con error en deploy"
+          [[ "${EVENT_TYPE}" == "deploy" && "${STATUS}" == "skipped" ]] && result_label="⏭️ Publicado (deploy omitido)"
+          [[ "${EVENT_TYPE}" == "image" && "${STATUS}" == "failure" ]] && result_label="❌ Error al publicar"
           if [[ "${EVENT_TYPE}" == "image" ]]; then
-            printf -v message 'Aurea publicación de imagen %s 🚀\nRepo: %s\nImagen: %s\nVersión: %s\nCommit: %s\nMensaje: %s' \
+            printf -v message 'Aurea · %s\nRepo: %s\nImagen: %s\nVersión: %s\nCommit: %s\nMensaje: %s' \
               "${result_label}" "${GITHUB_REPOSITORY}" "${IMAGE}" "${VERSION}" "${commit_id}" "${commit_message}"
           else
-            printf -v message 'Aurea deploy %s\nRepo: %s\nEntorno: %s\nVersión: %s\nCommit: %s\nMensaje: %s' \
+            printf -v message 'Aurea · %s\nRepo: %s\nEntorno: %s\nVersión: %s\nCommit: %s\nMensaje: %s' \
               "${result_label}" "${GITHUB_REPOSITORY}" "${ENVIRONMENT}" "${VERSION}" "${commit_id}" "${commit_message}"
             [[ -n "${DEPLOY_URL}" ]] && message+=$'\nURL: '${DEPLOY_URL}
           fi
@@ -122,22 +136,44 @@ jobs:
               "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
           done
       - name: Notify Discord
+        id: discord
         continue-on-error: true
         if: ${{ (env.DISCORD_BOT_TOKEN != '' && env.DISCORD_CHANNEL_ID != '') || env.DISCORD_WEBHOOK_URL != '' }}
         env:
           MESSAGE: ${{ steps.message.outputs.message }}
+          DISCORD_MESSAGE_ID: ${{ inputs.discord-message-id }}
         shell: bash
         run: |
           set -euo pipefail
           payload="$(jq -n --arg content "${MESSAGE}" '{content: $content}')"
+          response=""
+          if [[ -n "${DISCORD_MESSAGE_ID}" ]]; then
+            if [[ -n "${DISCORD_BOT_TOKEN}" && -n "${DISCORD_CHANNEL_ID}" ]]; then
+              curl --fail --silent --show-error --request PATCH \
+                --header "Authorization: Bot ${DISCORD_BOT_TOKEN}" \
+                --header 'content-type: application/json' \
+                --data "${payload}" \
+                "https://discord.com/api/v10/channels/${DISCORD_CHANNEL_ID}/messages/${DISCORD_MESSAGE_ID}" >/dev/null
+            else
+              curl --fail --silent --show-error --request PATCH \
+                --header 'content-type: application/json' \
+                --data "${payload}" \
+                "${DISCORD_WEBHOOK_URL}/messages/${DISCORD_MESSAGE_ID}" >/dev/null
+            fi
+            echo "message-id=${DISCORD_MESSAGE_ID}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [[ -n "${DISCORD_BOT_TOKEN}" && -n "${DISCORD_CHANNEL_ID}" ]]; then
-            curl --fail --silent --show-error --request POST \
+            response="$(curl --fail --silent --show-error --request POST \
               --header "Authorization: Bot ${DISCORD_BOT_TOKEN}" \
               --header 'content-type: application/json' \
               --data "${payload}" \
-              "https://discord.com/api/v10/channels/${DISCORD_CHANNEL_ID}/messages"
+              "https://discord.com/api/v10/channels/${DISCORD_CHANNEL_ID}/messages")"
           else
-            curl --fail --silent --show-error --request POST \
+            response="$(curl --fail --silent --show-error --request POST \
               --header 'content-type: application/json' \
-              --data "${payload}" "${DISCORD_WEBHOOK_URL}"
+              --data "${payload}" "${DISCORD_WEBHOOK_URL}?wait=true")"
           fi
+          message_id="$(jq -r '.id // empty' <<<"${response}")"
+          [[ -n "${message_id}" ]] || { echo 'Discord no devolvió el ID del mensaje.' >&2; exit 1; }
+          echo "message-id=${message_id}" >> "$GITHUB_OUTPUT"
