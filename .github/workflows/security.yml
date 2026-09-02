@@ -7,7 +7,9 @@ on:
         required: false
         default: node-frontend
         type: string
-permissions: { contents: read }
+permissions:
+  contents: read
+  security-events: write
 jobs:
   repository-security:
     runs-on: ubuntu-latest
@@ -54,3 +56,28 @@ jobs:
             range="HEAD~1..HEAD"
           fi
           gitleaks git --redact --exit-code 1 --log-opts="${range}"
+
+  dependency-review:
+    name: Dependency Review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  codeql:
+    name: CodeQL
+    if: (inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages') && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+      - name: Analyze with CodeQL
+        uses: github/codeql-action/analyze@v3

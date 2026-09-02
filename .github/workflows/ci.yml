@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: read
+  security-events: write
 
 jobs:
   validate:
@@ -26,6 +27,7 @@ jobs:
       - name: Checkout application
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Checkout shared CI
         uses: actions/checkout@v4
@@ -61,6 +63,12 @@ jobs:
       - name: Run backend lint
         if: inputs.project-type == 'node-backend'
         run: npm run lint
+      - name: Run frontend lint when available
+        if: inputs.project-type == 'node-frontend'
+        run: npm run lint --if-present
+      - name: Run format check when available
+        if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
+        run: npm run format:check --if-present
       - name: Run application checks
         if: inputs.project-type == 'node-pages'
         run: npm run check
@@ -89,3 +97,112 @@ jobs:
       - name: Test shared release scripts
         if: inputs.project-type == 'shared-ci' || inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
         run: .aurea-ci/scripts/test-release-scripts.sh
+
+  dependency-audit:
+    name: Audit dependencies
+    if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  conventional-commits:
+    name: Validate commits
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: aurea-io/aurea-ci
+          ref: main
+          path: .aurea-ci
+          token: ${{ github.token }}
+          persist-credentials: false
+      - name: Validate commit messages
+        run: .aurea-ci/scripts/validate-commits.sh "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+
+  dependency-review:
+    name: Dependency Review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  codeql:
+    name: CodeQL
+    if: (inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages') && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+      - name: Analyze with CodeQL
+        uses: github/codeql-action/analyze@v3
+
+  gitleaks:
+    name: Detect secrets
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install Gitleaks
+        run: |
+          set -euo pipefail
+          version=8.24.2
+          curl --fail --silent --show-error --location \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${version}/gitleaks_${version}_linux_x64.tar.gz" \
+            --output /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo install /tmp/gitleaks /usr/local/bin/gitleaks
+      - name: Scan changed commits for secrets
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            range="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          elif [[ -n "${{ github.event.before }}" && "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
+            range="${{ github.event.before }}..${GITHUB_SHA}"
+          else
+            range="HEAD~1..HEAD"
+          fi
+          gitleaks git --redact --exit-code 1 --log-opts="${range}"
+
+  gate:
+    name: PR Gate
+    if: always()
+    needs: [validate, dependency-audit, conventional-commits, dependency-review, codeql, gitleaks]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consolidate required checks
+        env:
+          RESULTS: ${{ needs.validate.result }} ${{ needs.dependency-audit.result }} ${{ needs.conventional-commits.result }} ${{ needs.dependency-review.result }} ${{ needs.codeql.result }} ${{ needs.gitleaks.result }}
+        run: |
+          set -euo pipefail
+          for result in ${RESULTS}; do
+            case "${result}" in
+              success|skipped) ;;
+              *) echo "PR Gate failed because a required check finished as ${result}." >&2; exit 1 ;;
+            esac
+          done
+          echo "PR Gate passed."
