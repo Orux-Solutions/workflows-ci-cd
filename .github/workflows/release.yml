@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: aurea-io/aurea-ci
-          ref: v3
+          ref: 370e25f9400b9aac6818fbdfea93daeee85620af
           path: .aurea-ci
           token: ${{ github.token }}
           persist-credentials: false
