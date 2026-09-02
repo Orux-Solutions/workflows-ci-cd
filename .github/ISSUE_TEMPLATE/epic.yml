@@ -1,0 +1,24 @@
+name: Épica
+description: Coordinar un resultado grande entre varias tareas
+title: "epic: "
+labels: ["type:epic"]
+body:
+  - type: markdown
+    attributes:
+      value: "Elegí exactamente una label area:* antes de guardar la issue."
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Resultado esperado
+    validations: { required: true }
+  - type: textarea
+    id: scope
+    attributes:
+      label: Alcance y fuera de alcance
+    validations: { required: true }
+  - type: textarea
+    id: children
+    attributes:
+      label: Issues hijas y dependencias
+      placeholder: "- [ ] #..."
+    validations: { required: true }
