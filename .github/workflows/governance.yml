@@ -1,0 +1,42 @@
+name: Aurea Governance
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  governance:
+    name: Governance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate issue and PR metadata
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const allowedArea = /^area:/i;
+            const areaLabels = (labels) => labels.filter((label) => allowedArea.test(label.name));
+            const issueRef = /\b(?:close[sd]?|fix(?:e[sd]?)?|resolve[sd]?)\s+(?:(?:https?:\/\/github\.com\/[^/\s]+\/[^/\s]+\/issues\/)|(?:[^/\s#]+\/[^/\s#]+#))?#?\d+\b/i;
+
+            if (context.eventName === 'issues') {
+              const labels = areaLabels(context.payload.issue.labels || []);
+              if (labels.length !== 1) {
+                core.setFailed('La issue debe tener exactamente una label de área, por ejemplo area:reservas o area:auth. Status se gestiona con el campo Status del Project.');
+              }
+              return;
+            }
+
+            if (context.eventName === 'pull_request') {
+              const labels = areaLabels(context.payload.pull_request.labels || []);
+              if (labels.length !== 1) {
+                core.setFailed('El PR debe tener exactamente una label de área. Status se gestiona con el campo Status del Project.');
+                return;
+              }
+              const body = context.payload.pull_request.body || '';
+              if (!issueRef.test(body)) {
+                core.setFailed('El PR debe incluir una referencia ejecutable, por ejemplo: Closes #123 o Closes aurea-io/REPO#123.');
+              }
+            }
