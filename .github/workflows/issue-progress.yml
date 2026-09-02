@@ -1,57 +1,15 @@
 name: Issue progress automation
 
 on:
+  issues:
+    types: [opened, edited, reopened]
   pull_request:
-    types: [opened, reopened, synchronize, closed]
+    types: [opened, edited, reopened, ready_for_review]
 
 permissions:
-  issues: write
+  issues: read
   pull-requests: read
 
 jobs:
-  update-linked-issues:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Update linked issue status and assignee
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const body = context.payload.pull_request.body || '';
-            const references = [...body.matchAll(/\b(?:refs|closes|fixes|resolves)\s+#(\d+)\b/gi)];
-            const issueNumbers = [...new Set(references.map((match) => Number(match[1])))];
-            if (issueNumbers.length === 0) {
-              core.info('No linked issues found in the pull request body.');
-              return;
-            }
-
-            const merged = context.payload.action === 'closed' && context.payload.pull_request.merged;
-            const addLabel = merged ? 'status:done' : 'status:in-progress';
-            const removeLabel = merged ? 'status:in-progress' : 'status:backlog';
-            const actor = context.payload.pull_request.user.login;
-
-            for (const issue_number of issueNumbers) {
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number,
-                labels: [addLabel],
-              });
-              try {
-                await github.rest.issues.removeLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number,
-                  name: removeLabel,
-                });
-              } catch (error) {
-                if (error.status !== 404) throw error;
-              }
-              if (!merged) {
-                await github.rest.issues.addAssignees({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number,
-                  assignees: [actor],
-                });
-              }
-            }
+  governance:
+    uses: aurea-io/aurea-ci/.github/workflows/governance.yml@main
