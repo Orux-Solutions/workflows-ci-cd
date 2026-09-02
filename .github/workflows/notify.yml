@@ -105,6 +105,7 @@ jobs:
             echo 'AUREA_MESSAGE'
           } >> "${GITHUB_OUTPUT}"
       - name: Notify Telegram
+        continue-on-error: true
         if: ${{ env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != '' }}
         env:
           MESSAGE: ${{ steps.message.outputs.message }}
@@ -121,6 +122,7 @@ jobs:
               "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
           done
       - name: Notify Discord
+        continue-on-error: true
         if: ${{ (env.DISCORD_BOT_TOKEN != '' && env.DISCORD_CHANNEL_ID != '') || env.DISCORD_WEBHOOK_URL != '' }}
         env:
           MESSAGE: ${{ steps.message.outputs.message }}
