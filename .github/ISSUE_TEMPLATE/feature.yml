@@ -1,0 +1,47 @@
+name: Feature
+description: Proponer una capacidad funcional
+title: "feat: "
+labels: ["type:feature"]
+body:
+  - type: markdown
+    attributes:
+      value: "Elegí exactamente una label area:* antes de guardar la issue."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema y objetivo
+    validations: { required: true }
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceptación
+      placeholder: "- [ ] ..."
+    validations: { required: true }
+  - type: textarea
+    id: scope
+    attributes:
+      label: Fuera de alcance y dependencias
+*** Add File: /home/fedemarkoo/Escritorio/Aurea/aurea-ci/.github/ISSUE_TEMPLATE/bug.yml
+name: Bug
+description: Reportar un comportamiento incorrecto
+title: "fix: "
+labels: ["type:bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Elegí exactamente una label area:* antes de guardar la issue."
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Pasos para reproducir
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado
+    validations: { required: true }
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidencia y entorno
+    validations: { required: true }
