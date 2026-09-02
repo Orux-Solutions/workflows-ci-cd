@@ -62,10 +62,26 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
+      - name: Check Dependency Graph availability
+        id: dependency-graph
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          status="$(gh api "/repos/${GITHUB_REPOSITORY}" --jq '.security_and_analysis.dependency_graph.status // "disabled"' 2>/dev/null || echo disabled)"
+          if [[ "${status}" == "enabled" ]]; then
+            echo 'supported=true' >> "${GITHUB_OUTPUT}"
+          else
+            echo 'supported=false' >> "${GITHUB_OUTPUT}"
+            echo "Dependency Graph is ${status}; using npm audit as the available fallback."
+          fi
       - name: Review dependency changes
+        if: steps.dependency-graph.outputs.supported == 'true'
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
+      - name: Record unsupported Dependency Review
+        if: steps.dependency-graph.outputs.supported != 'true'
+        run: echo 'Dependency Review skipped because GitHub Dependency Graph is disabled; dependency-audit remains required for Node projects.'
 
   codeql:
     name: CodeQL
