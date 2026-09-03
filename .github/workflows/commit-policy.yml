@@ -34,3 +34,21 @@ jobs:
             range="HEAD"
           fi
           .aurea-ci/scripts/validate-commits.sh "${range}"
+  summary:
+    name: Workflow summary
+    if: ${{ always() }}
+    needs: [conventional-commits]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write workflow summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## Workflow summary"
+            echo "- Workflow: ${GITHUB_WORKFLOW}"
+            echo "- Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo
+            echo "| Job | Estado | Motivo |"
+            echo "| --- | --- | --- |"
+            echo "| `conventional-commits` | `${{ needs.conventional-commits.result }}` | `${{ needs.conventional-commits.result == 'success' && 'Completado correctamente' || needs.conventional-commits.result == 'failure' && 'Falló; revisar los logs del job' || needs.conventional-commits.result == 'skipped' && 'Omitido porque no se cumplió su condición' || format('Resultado: {0}', needs.conventional-commits.result) }}` |"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -177,3 +177,21 @@ jobs:
           message_id="$(jq -r '.id // empty' <<<"${response}")"
           [[ -n "${message_id}" ]] || { echo 'Discord no devolvió el ID del mensaje.' >&2; exit 1; }
           echo "message-id=${message_id}" >> "$GITHUB_OUTPUT"
+  summary:
+    name: Workflow summary
+    if: ${{ always() }}
+    needs: [notify]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write workflow summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## Workflow summary"
+            echo "- Workflow: ${GITHUB_WORKFLOW}"
+            echo "- Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo
+            echo "| Job | Estado | Motivo |"
+            echo "| --- | --- | --- |"
+            echo "| `notify` | `${{ needs.notify.result }}` | `${{ needs.notify.result == 'success' && 'Completado correctamente' || needs.notify.result == 'failure' && 'Falló; revisar los logs del job' || needs.notify.result == 'skipped' && 'Omitido porque no se cumplió su condición' || format('Resultado: {0}', needs.notify.result) }}` |"
+          } >> "$GITHUB_STEP_SUMMARY"
