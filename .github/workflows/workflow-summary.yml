@@ -3,7 +3,7 @@ name: Aurea Workflow Summary
 on:
   workflow_call:
     inputs:
-      needs-json:
+      needs_json:
         description: JSON object produced from the caller workflow needs context
         required: true
         type: string
@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Write workflow summary
         env:
-          NEEDS_JSON: ${{ inputs.needs-json }}
+          NEEDS_JSON: ${{ inputs.needs_json }}
         run: |
           {
             echo "## Workflow summary"
