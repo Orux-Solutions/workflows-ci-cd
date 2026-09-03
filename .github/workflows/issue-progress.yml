@@ -13,4 +13,4 @@ permissions:
 
 jobs:
   governance:
-    uses: aurea-io/aurea-ci/.github/workflows/governance.yml@main
+    uses: ./.github/workflows/governance.yml
