@@ -117,22 +117,6 @@ jobs:
             echo "- Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
           } >> "${GITHUB_STEP_SUMMARY}"
   summary:
-    name: Workflow summary
-    if: ${{ always() }}
-    needs: [calculate-version, create-tag, create-release]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Write workflow summary
-        if: ${{ always() }}
-        run: |
-          {
-            echo "## Workflow summary"
-            echo "- Workflow: ${GITHUB_WORKFLOW}"
-            echo "- Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-            echo
-            echo "| Job | Estado | Motivo |"
-            echo "| --- | --- | --- |"
-            echo "| `calculate-version` | `${{ needs.calculate-version.result }}` | `${{ needs.calculate-version.result == 'success' && 'Completado correctamente' || needs.calculate-version.result == 'failure' && 'Falló; revisar los logs del job' || needs.calculate-version.result == 'skipped' && 'Omitido porque no se cumplió su condición' || format('Resultado: {0}', needs.calculate-version.result) }}` |"
-            echo "| `create-tag` | `${{ needs.create-tag.result }}` | `${{ needs.create-tag.result == 'success' && 'Completado correctamente' || needs.create-tag.result == 'failure' && 'Falló; revisar los logs del job' || needs.create-tag.result == 'skipped' && 'Omitido porque no se cumplió su condición' || format('Resultado: {0}', needs.create-tag.result) }}` |"
-            echo "| `create-release` | `${{ needs.create-release.result }}` | `${{ needs.create-release.result == 'success' && 'Completado correctamente' || needs.create-release.result == 'failure' && 'Falló; revisar los logs del job' || needs.create-release.result == 'skipped' && 'Omitido porque no se cumplió su condición' || format('Resultado: {0}', needs.create-release.result) }}` |"
-          } >> "$GITHUB_STEP_SUMMARY"
+    uses: ./.github/workflows/workflow-summary.yml
+    with:
+      needs-json: ${{ toJSON(needs) }}
