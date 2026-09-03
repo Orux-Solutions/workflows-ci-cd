@@ -26,3 +26,21 @@ jobs:
           persist-credentials: false
       - name: Validate module manifests
         run: .aurea-ci/scripts/validate-manifests.sh
+  summary:
+    name: Workflow summary
+    if: ${{ always() }}
+    needs: [manifests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write workflow summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## Workflow summary"
+            echo "- Workflow: ${GITHUB_WORKFLOW}"
+            echo "- Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo
+            echo "| Job | Estado | Motivo |"
+            echo "| --- | --- | --- |"
+            echo "| `manifests` | `${{ needs.manifests.result }}` | `${{ needs.manifests.result == 'success' && 'Completado correctamente' || needs.manifests.result == 'failure' && 'Falló; revisar los logs del job' || needs.manifests.result == 'skipped' && 'Omitido porque no se cumplió su condición' || format('Resultado: {0}', needs.manifests.result) }}` |"
+          } >> "$GITHUB_STEP_SUMMARY"

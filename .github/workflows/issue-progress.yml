@@ -14,3 +14,21 @@ permissions:
 jobs:
   governance:
     uses: ./.github/workflows/governance.yml
+  summary:
+    name: Workflow summary
+    if: ${{ always() }}
+    needs: [governance]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write workflow summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## Workflow summary"
+            echo "- Workflow: ${GITHUB_WORKFLOW}"
+            echo "- Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo
+            echo "| Job | Estado | Motivo |"
+            echo "| --- | --- | --- |"
+            echo "| `governance` | `${{ needs.governance.result }}` | `${{ needs.governance.result == 'success' && 'Completado correctamente' || needs.governance.result == 'failure' && 'Falló; revisar los logs del job' || needs.governance.result == 'skipped' && 'Omitido porque no se cumplió su condición' || format('Resultado: {0}', needs.governance.result) }}` |"
+          } >> "$GITHUB_STEP_SUMMARY"

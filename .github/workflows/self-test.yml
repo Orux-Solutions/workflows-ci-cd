@@ -16,3 +16,21 @@ jobs:
         run: ./scripts/test-release-scripts.sh
       - name: Test manifest validation
         run: ./scripts/test-manifest-validation.sh
+  summary:
+    name: Workflow summary
+    if: ${{ always() }}
+    needs: [scripts]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write workflow summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## Workflow summary"
+            echo "- Workflow: ${GITHUB_WORKFLOW}"
+            echo "- Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo
+            echo "| Job | Estado | Motivo |"
+            echo "| --- | --- | --- |"
+            echo "| `scripts` | `${{ needs.scripts.result }}` | `${{ needs.scripts.result == 'success' && 'Completado correctamente' || needs.scripts.result == 'failure' && 'Falló; revisar los logs del job' || needs.scripts.result == 'skipped' && 'Omitido porque no se cumplió su condición' || format('Resultado: {0}', needs.scripts.result) }}` |"
+          } >> "$GITHUB_STEP_SUMMARY"
