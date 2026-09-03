@@ -16,7 +16,6 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path.cwd()
-LEGACY_SHIMS = {"restaurant", "appointments", "inventory", "pos", "clients"}
 
 
 def error(path: Path | str, message: str) -> None:
@@ -78,8 +77,6 @@ def validate_backend(sections_dir: Path, canonical_sections: dict[str, set[str]]
     # 1. Inspect direct subdirectories of src/tenant/sections
     for item in sections_dir.iterdir():
         if not item.is_dir() or item.name.startswith("."):
-            continue
-        if item.name in LEGACY_SHIMS:
             continue
         if item.name not in canonical_sections:
             problems.append(
