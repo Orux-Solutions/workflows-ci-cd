@@ -7,7 +7,6 @@ permissions:
   contents: read
 jobs:
   scripts:
-    name: Run shared CI validation tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
