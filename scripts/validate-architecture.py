@@ -264,6 +264,17 @@ def report_and_exit(problems: list[str]) -> None:
     sys.exit(1)
 
 
+scripts_dir = Path(__file__).resolve().parent
+if str(scripts_dir) not in sys.path:
+    sys.path.insert(0, str(scripts_dir))
+
+try:
+    from validate_services_cohesion import scan_directory, check_violations
+    has_cohesion_checker = True
+except ImportError:
+    has_cohesion_checker = False
+
+
 def main() -> int:
     print("🔍 Iniciando validación canónica de arquitectura e isomorfismo (Sección -> Página -> Módulo)...")
     canonical_sections = load_taxonomy()
@@ -278,6 +289,22 @@ def main() -> int:
     if fe_sections.exists() and any(fe_sections.rglob("*.tsx")):
         print(f"📁 Validando Frontend en {fe_sections.relative_to(ROOT)}...")
         problems.extend(validate_frontend(fe_sections, canonical_sections))
+
+    src_dir = ROOT / "src"
+    if has_cohesion_checker and src_dir.exists():
+        print(f"📁 Validando cohesión de servicios y detección de God Services en {src_dir.relative_to(ROOT)}...")
+        entities = scan_directory(src_dir)
+        violations = check_violations(entities)
+        for ent, sections in violations:
+            try:
+                rel_file = ent.file_path.relative_to(ROOT)
+            except ValueError:
+                rel_file = ent.file_path
+            problems.append(
+                f"God Service detectado en '{rel_file}' ({ent.name}): "
+                f"concentra {len(sections)} dominios de negocio disjuntos {sorted(sections)}. "
+                f"Debe desacoplarse en servicios por Bounded Context según la Regla 6 y 7."
+            )
 
     if problems:
         report_and_exit(problems)
