@@ -106,8 +106,8 @@ jobs:
           [[ "${EVENT_TYPE}" == "deploy" && "${STATUS}" == "skipped" ]] && result_label="⏭️ Publicado (deploy omitido)"
           [[ "${EVENT_TYPE}" == "image" && "${STATUS}" == "failure" ]] && result_label="❌ Error al publicar"
           if [[ "${EVENT_TYPE}" == "image" ]]; then
-            printf -v message 'Aurea · %s\nRepo: %s\nImagen: %s\nVersión: %s\nCommit: %s\nMensaje: %s' \
-              "${result_label}" "${GITHUB_REPOSITORY}" "${IMAGE}" "${VERSION}" "${commit_id}" "${commit_message}"
+            printf -v message ':package: %s %s %s - %s' \
+              "${repository_name}" "${VERSION}" "${result_label#* }" "${commit_message}"
           else
             printf -v message ':rocket: %s %s %s - %s' \
               "${repository_name}" "${VERSION}" "${result_label#* }" "${commit_message}"
