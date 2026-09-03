@@ -45,7 +45,8 @@ jobs:
       image: ${{ inputs.image }}
       version: ${{ inputs.version }}
     secrets: inherit
-  summary:
+ summary:
+    if: ${{ always() }}
     needs: [publish, notify]
     uses: ./.github/workflows/workflow-summary.yml
     with:

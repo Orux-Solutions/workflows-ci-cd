@@ -26,7 +26,8 @@ jobs:
           persist-credentials: false
       - name: Validate module manifests
         run: .aurea-ci/scripts/validate-manifests.sh
-  summary:
+ summary:
+    if: ${{ always() }}
     needs: [manifests]
     uses: ./.github/workflows/workflow-summary.yml
     with:

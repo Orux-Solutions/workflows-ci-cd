@@ -228,7 +228,8 @@ jobs:
             esac
           done
           echo "PR Gate passed."
-  summary:
+ summary:
+    if: ${{ always() }}
     needs: [validate, dependency-audit, conventional-commits, dependency-review, codeql, gitleaks, gate]
     uses: ./.github/workflows/workflow-summary.yml
     with:

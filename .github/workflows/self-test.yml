@@ -16,7 +16,8 @@ jobs:
         run: ./scripts/test-release-scripts.sh
       - name: Test manifest validation
         run: ./scripts/test-manifest-validation.sh
-  summary:
+ summary:
+    if: ${{ always() }}
     needs: [scripts]
     uses: ./.github/workflows/workflow-summary.yml
     with:
