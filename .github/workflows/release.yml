@@ -116,7 +116,7 @@ jobs:
             [[ -n "${DEPLOY_URL}" ]] && echo "- Demo/deploy: ${DEPLOY_URL}"
             echo "- Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
           } >> "${GITHUB_STEP_SUMMARY}"
- summary:
+  summary:
     if: ${{ always() }}
     needs: [calculate-version, create-tag, create-release]
     uses: ./.github/workflows/workflow-summary.yml

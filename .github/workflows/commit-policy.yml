@@ -34,7 +34,7 @@ jobs:
             range="HEAD"
           fi
           .aurea-ci/scripts/validate-commits.sh "${range}"
- summary:
+  summary:
     if: ${{ always() }}
     needs: [conventional-commits]
     uses: ./.github/workflows/workflow-summary.yml

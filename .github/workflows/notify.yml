@@ -177,7 +177,7 @@ jobs:
           message_id="$(jq -r '.id // empty' <<<"${response}")"
           [[ -n "${message_id}" ]] || { echo 'Discord no devolvió el ID del mensaje.' >&2; exit 1; }
           echo "message-id=${message_id}" >> "$GITHUB_OUTPUT"
- summary:
+  summary:
     if: ${{ always() }}
     needs: [notify]
     uses: ./.github/workflows/workflow-summary.yml
