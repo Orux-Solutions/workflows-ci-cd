@@ -1,0 +1,41 @@
+name: Aurea Workflow Summary
+
+on:
+  workflow_call:
+    inputs:
+      needs-json:
+        description: JSON object produced from the caller workflow needs context
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  summary:
+    name: Workflow summary
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write workflow summary
+        env:
+          NEEDS_JSON: ${{ inputs.needs-json }}
+        run: |
+          {
+            echo "## Workflow summary"
+            echo "- Workflow: ${GITHUB_WORKFLOW}"
+            echo "- Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo
+            echo "| Job | Estado | Motivo |"
+            echo "| --- | --- | --- |"
+            while IFS= read -r job; do
+              result="$(jq -r --arg job "${job}" '.[$job].result' <<<"${NEEDS_JSON}")"
+              case "${result}" in
+                success) reason="Completado correctamente" ;;
+                failure) reason="Falló; revisar los logs del job" ;;
+                skipped) reason="Omitido porque no se cumplió su condición" ;;
+                *) reason="Resultado: ${result}" ;;
+              esac
+              echo "| \`${job}\` | \`${result}\` | \`${reason}\` |"
+            done < <(jq -r 'keys[]' <<<"${NEEDS_JSON}")
+          } >> "${GITHUB_STEP_SUMMARY}"

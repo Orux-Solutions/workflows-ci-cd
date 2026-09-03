@@ -61,20 +61,6 @@ jobs:
           name: theme-service-performance
           path: theme-service-performance.json
   summary:
-    name: Workflow summary
-    if: ${{ always() }}
-    needs: [measure]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Write workflow summary
-        if: ${{ always() }}
-        run: |
-          {
-            echo "## Workflow summary"
-            echo "- Workflow: ${GITHUB_WORKFLOW}"
-            echo "- Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-            echo
-            echo "| Job | Estado | Motivo |"
-            echo "| --- | --- | --- |"
-            echo "| `measure` | `${{ needs.measure.result }}` | `${{ needs.measure.result == 'success' && 'Completado correctamente' || needs.measure.result == 'failure' && 'Falló; revisar los logs del job' || needs.measure.result == 'skipped' && 'Omitido porque no se cumplió su condición' || format('Resultado: {0}', needs.measure.result) }}` |"
-          } >> "$GITHUB_STEP_SUMMARY"
+    uses: ./.github/workflows/workflow-summary.yml
+    with:
+      needs-json: ${{ toJSON(needs) }}

@@ -17,28 +17,6 @@ jobs:
       - name: Test manifest validation
         run: ./scripts/test-manifest-validation.sh
   summary:
-    name: Workflow summary
-    if: ${{ always() }}
-    needs: [scripts]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Write workflow summary
-        if: ${{ always() }}
-        env:
-          JOB_RESULT: ${{ needs.scripts.result }}
-        run: |
-          {
-            echo "## Workflow summary"
-            echo "- Workflow: ${GITHUB_WORKFLOW}"
-            echo "- Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-            echo
-            echo "| Job | Estado | Motivo |"
-            echo "| --- | --- | --- |"
-            case "${JOB_RESULT}" in
-              success) reason="Completado correctamente" ;;
-              failure) reason="Falló; revisar los logs del job" ;;
-              skipped) reason="Omitido porque no se cumplió su condición" ;;
-              *) reason="Resultado: ${JOB_RESULT}" ;;
-            esac
-            echo "| \`scripts\` | \`${JOB_RESULT}\` | \`${reason}\` |"
-          } >> "$GITHUB_STEP_SUMMARY"
+    uses: ./.github/workflows/workflow-summary.yml
+    with:
+      needs-json: ${{ toJSON(needs) }}
