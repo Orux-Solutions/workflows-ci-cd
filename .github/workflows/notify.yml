@@ -96,6 +96,7 @@ jobs:
         run: |
           set -euo pipefail
           commit_id="${SOURCE_COMMIT}"
+          repository_name="${GITHUB_REPOSITORY##*/}"
           commit_message="${COMMIT_MESSAGE:-workflow dispatch}"
           commit_message="${commit_message%%$'\n'*}"
           commit_message="${commit_message//$'\r'/ }"
@@ -108,9 +109,8 @@ jobs:
             printf -v message 'Aurea · %s\nRepo: %s\nImagen: %s\nVersión: %s\nCommit: %s\nMensaje: %s' \
               "${result_label}" "${GITHUB_REPOSITORY}" "${IMAGE}" "${VERSION}" "${commit_id}" "${commit_message}"
           else
-            printf -v message 'Aurea · %s\nRepo: %s\nEntorno: %s\nVersión: %s\nCommit: %s\nMensaje: %s' \
-              "${result_label}" "${GITHUB_REPOSITORY}" "${ENVIRONMENT}" "${VERSION}" "${commit_id}" "${commit_message}"
-            [[ -n "${DEPLOY_URL}" ]] && message+=$'\nURL: '${DEPLOY_URL}
+            printf -v message ':rocket: %s %s %s - %s' \
+              "${repository_name}" "${VERSION}" "${result_label#* }" "${commit_message}"
           fi
           [[ -n "${REASON}" ]] && message+=$'\nMotivo: '${REASON}
           {
