@@ -7,6 +7,7 @@ permissions:
   contents: read
 jobs:
   scripts:
+    name: Taxonomy and isomorphism validation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
