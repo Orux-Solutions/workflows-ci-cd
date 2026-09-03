@@ -17,6 +17,7 @@ jobs:
       - name: Test manifest validation
         run: ./scripts/test-manifest-validation.sh
   summary:
+    needs: [scripts]
     uses: ./.github/workflows/workflow-summary.yml
     with:
       needs-json: ${{ toJSON(needs) }}

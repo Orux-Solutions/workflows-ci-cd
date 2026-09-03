@@ -178,6 +178,7 @@ jobs:
           [[ -n "${message_id}" ]] || { echo 'Discord no devolvió el ID del mensaje.' >&2; exit 1; }
           echo "message-id=${message_id}" >> "$GITHUB_OUTPUT"
   summary:
+    needs: [notify]
     uses: ./.github/workflows/workflow-summary.yml
     with:
       needs-json: ${{ toJSON(needs) }}

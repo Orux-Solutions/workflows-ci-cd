@@ -117,6 +117,7 @@ jobs:
             echo "- Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
           } >> "${GITHUB_STEP_SUMMARY}"
   summary:
+    needs: [calculate-version, create-tag, create-release]
     uses: ./.github/workflows/workflow-summary.yml
     with:
       needs-json: ${{ toJSON(needs) }}

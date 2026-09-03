@@ -15,6 +15,7 @@ jobs:
   governance:
     uses: ./.github/workflows/governance.yml
   summary:
+    needs: [governance]
     uses: ./.github/workflows/workflow-summary.yml
     with:
       needs-json: ${{ toJSON(needs) }}

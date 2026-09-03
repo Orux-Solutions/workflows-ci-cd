@@ -35,6 +35,7 @@ jobs:
           fi
           .aurea-ci/scripts/validate-commits.sh "${range}"
   summary:
+    needs: [conventional-commits]
     uses: ./.github/workflows/workflow-summary.yml
     with:
       needs-json: ${{ toJSON(needs) }}

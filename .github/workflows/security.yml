@@ -98,6 +98,7 @@ jobs:
       - name: Analyze with CodeQL
         uses: github/codeql-action/analyze@v3
   summary:
+    needs: [repository-security, dependency-review, codeql]
     uses: ./.github/workflows/workflow-summary.yml
     with:
       needs-json: ${{ toJSON(needs) }}
