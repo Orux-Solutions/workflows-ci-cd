@@ -3,18 +3,12 @@ name: Aurea Governance
 on:
   workflow_call:
 
-permissions:
-  contents: read
-  issues: write
-  pull-requests: write
-
 jobs:
   governance:
     name: Governance
     runs-on: ubuntu-latest
     steps:
       - name: Checkout shared CI
-        if: github.repository != 'aurea-io/aurea-ci'
         uses: actions/checkout@v4
         with:
           repository: aurea-io/aurea-ci
@@ -27,8 +21,5 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const scriptPath = context.repo.repo === 'aurea-ci'
-              ? `${process.cwd()}/scripts/validate-governance.mjs`
-              : `${process.cwd()}/.aurea-ci/scripts/validate-governance.mjs`;
-            const { validateGovernance } = await import(scriptPath);
+            const { validateGovernance } = await import(`${process.cwd()}/.aurea-ci/scripts/validate-governance.mjs`);
             await validateGovernance({ github, context, core });
