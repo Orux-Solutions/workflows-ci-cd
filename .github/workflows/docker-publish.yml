@@ -46,6 +46,8 @@ jobs:
       version: ${{ inputs.version }}
     secrets: inherit
   summary:
+    if: ${{ always() }}
+    needs: [publish, notify]
     uses: ./.github/workflows/workflow-summary.yml
     with:
-      needs-json: ${{ toJSON(needs) }}
+      needs_json: ${{ toJSON(needs) }}
