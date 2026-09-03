@@ -1,4 +1,4 @@
-name: Aurea Workflow Summary
+name: Aurea Workflow Results Summary
 
 on:
   workflow_call:
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   summary:
-    name: Workflow summary
+    name: Publish workflow results summary
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
