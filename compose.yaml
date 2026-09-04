@@ -1,0 +1,66 @@
+services:
+  mongo:
+    image: mongo:8
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-orux}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD is required}
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' | grep 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  business-backend:
+    image: ${BUSINESS_BACKEND_IMAGE:-ghcr.io/Orux-Solutions/backoffice-be-orux}:${BUSINESS_BACKEND_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: mongodb://${MONGO_ROOT_USERNAME:-orux}:${MONGO_ROOT_PASSWORD}@mongo:27017/orux?authSource=admin
+      ORUX_COMMIT_ID: ${BUSINESS_BACKEND_COMMIT:-unknown}
+    depends_on:
+      mongo: { condition: service_healthy }
+    ports: ["${BUSINESS_BACKEND_PORT:-3001}:3001"]
+
+  admin-backend:
+    image: ${ADMIN_BACKEND_IMAGE:-ghcr.io/Orux-Solutions/orux-admin-backend}:${ADMIN_BACKEND_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DATABASE_URL: mongodb://${MONGO_ROOT_USERNAME:-orux}:${MONGO_ROOT_PASSWORD}@mongo:27017/orux?authSource=admin
+    depends_on:
+      mongo: { condition: service_healthy }
+    ports: ["${ADMIN_BACKEND_PORT:-3002}:3002"]
+
+  client-backend:
+    image: ${CLIENT_BACKEND_IMAGE:-ghcr.io/Orux-Solutions/orux-client-backend}:${CLIENT_BACKEND_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      DATABASE_URL: mongodb://${MONGO_ROOT_USERNAME:-orux}:${MONGO_ROOT_PASSWORD}@mongo:27017/orux?authSource=admin
+    depends_on:
+      mongo: { condition: service_healthy }
+    ports: ["${CLIENT_BACKEND_PORT:-3003}:3003"]
+
+  business-frontend:
+    image: ${BUSINESS_FRONTEND_IMAGE:-ghcr.io/Orux-Solutions/backoffice-fe-orux}:${BUSINESS_FRONTEND_VERSION:-latest}
+    restart: unless-stopped
+    ports: ["${BUSINESS_FRONTEND_PORT:-8080}:80"]
+
+  admin-frontend:
+    image: ${ADMIN_FRONTEND_IMAGE:-ghcr.io/Orux-Solutions/orux-admin-frontend}:${ADMIN_FRONTEND_VERSION:-latest}
+    restart: unless-stopped
+    ports: ["${ADMIN_FRONTEND_PORT:-8081}:80"]
+
+  client-frontend:
+    image: ${CLIENT_FRONTEND_IMAGE:-ghcr.io/Orux-Solutions/orux-client-frontend}:${CLIENT_FRONTEND_VERSION:-latest}
+    restart: unless-stopped
+    ports: ["${CLIENT_FRONTEND_PORT:-8082}:80"]
+
+volumes:
+  mongo-data:
