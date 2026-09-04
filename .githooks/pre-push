@@ -1,0 +1,2 @@
+#!/bin/sh
+while read -r a b c d; do case "$c" in refs/heads/main|refs/heads/master) echo 'Push bloqueado: usar una rama y Pull Request.'; exit 1;; esac; done
