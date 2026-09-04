@@ -1,0 +1,19 @@
+[Unit]
+Description=Orux local Docker Compose autodeployer
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=@ORUX_USER@
+Group=@ORUX_GROUP@
+WorkingDirectory=@ORUX_DIR@
+Environment=HOME=/tmp/orux-deployer-home
+Environment=DOCKER_CONFIG=/tmp/orux-deployer-docker-config
+ExecStartPre=/usr/bin/mkdir -p /tmp/orux-deployer-home /tmp/orux-deployer-docker-config
+ExecStart=/usr/bin/python3 @ORUX_DIR@/scripts/deployment/local-deployer.py --compose @ORUX_COMPOSE@ --env-file @ORUX_ENV_FILE@ --interval 300
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

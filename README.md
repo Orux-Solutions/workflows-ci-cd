@@ -60,3 +60,19 @@ El umbral se puede cambiar con `ORUX_FEATURES_FOR_MAJOR`, siempre con un entero 
 ## Regla de mantenimiento
 
 Los cambios de CI se hacen en este repo, se prueban con `scripts/test-release-scripts.sh` y luego se actualiza el tag `v1`. Los repos de aplicación no deben contener scripts de CI propios.
+
+## Autodeployer local
+
+Para instalaciones Orux con un `compose.yaml` en servidor propio, el autodeployer
+periódicamente hace pull, recrea los servicios configurados y valida un endpoint
+de salud. Se ejecuta una vez con `--once` o en modo continuo con `--interval`:
+
+```bash
+ORUX_DEPLOY_SERVICES="backend frontend" \
+python3 scripts/deployment/local-deployer.py \
+  --compose /srv/orux/compose.yaml --env-file /srv/orux/.env \
+  --health-url http://127.0.0.1/health --once
+```
+
+En Linux se puede instalar como servicio con `sudo scripts/deployment/install-autodeployer.sh`.
+Es opcional y no reemplaza el despliegue existente a Render.
