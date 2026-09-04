@@ -16,6 +16,6 @@ habilitado. Si no lo está, el workflow deja constancia del motivo y mantiene
 `dependency-audit` como control obligatorio para los perfiles Node; esto evita
 presentar un control no soportado como si hubiera pasado.
 
-Los callers deben apuntar a `aurea-ci/.github/workflows/ci.yml@main`, declarar
+Los callers deben apuntar a `orux-ci/.github/workflows/ci.yml@main`, declarar
 el perfil correcto y configurar el nombre del job reusable como required check
 en la protección de `main`.

@@ -21,7 +21,7 @@ body:
     id: scope
     attributes:
       label: Fuera de alcance y dependencias
-*** Add File: /home/fedemarkoo/Escritorio/Aurea/aurea-ci/.github/ISSUE_TEMPLATE/bug.yml
+*** Add File: /home/fedemarkoo/Escritorio/Orux/orux-ci/.github/ISSUE_TEMPLATE/bug.yml
 name: Bug
 description: Reportar un comportamiento incorrecto
 title: "fix: "

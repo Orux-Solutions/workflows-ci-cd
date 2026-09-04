@@ -1,4 +1,4 @@
-name: Aurea Security
+name: Orux Security
 on:
   workflow_call:
     inputs:

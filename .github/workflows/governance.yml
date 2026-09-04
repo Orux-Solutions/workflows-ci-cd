@@ -1,4 +1,4 @@
-name: Aurea Governance
+name: Orux Governance
 
 on:
   workflow_call:
@@ -11,9 +11,9 @@ jobs:
       - name: Checkout shared CI
         uses: actions/checkout@v4
         with:
-          repository: aurea-io/aurea-ci
+          repository: Orux-Solutions/orux-ci
           ref: main
-          path: .aurea-ci
+          path: .orux-ci
           token: ${{ github.token }}
           persist-credentials: false
 
@@ -21,7 +21,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const { validateGovernance } = await import(`${process.cwd()}/.aurea-ci/scripts/validate-governance.mjs`);
+            const { validateGovernance } = await import(`${process.cwd()}/.orux-ci/scripts/validate-governance.mjs`);
             await validateGovernance({ github, context, core });
   summary:
     if: ${{ always() }}

@@ -1,5 +1,5 @@
 /**
- * Aurea Governance Validator
+ * Orux Governance Validator
  * Validates PR & Issue metadata, generates Step Summaries,
  * and posts helpful diagnostic comments on PRs when validation fails.
  */
@@ -8,7 +8,7 @@ const ALLOWED_AREA_REGEX = /^area:/i;
 const ISSUE_REF_REGEX =
   /\b(?:close[sd]?|fix(?:e[sd]?)?|resolve[sd]?)\s+(?:(?:https?:\/\/github\.com\/[^/\s]+\/[^/\s]+\/issues\/)|(?:[^/\s#]+\/[^/\s#]+#))?#?\d+\b/i;
 
-const REPORT_MARKER = '<!-- aurea-governance-report -->';
+const REPORT_MARKER = '<!-- orux-governance-report -->';
 
 export async function validateGovernance({ github, context, core }) {
   const isPR = context.eventName === 'pull_request';
@@ -21,7 +21,7 @@ export async function validateGovernance({ github, context, core }) {
   const hasIssueRef = isPR ? ISSUE_REF_REGEX.test(body) : true;
 
   if (hasValidArea && hasIssueRef) {
-    console.log('✅ Metadatos de gobernanza conformes con la normativa de Aurea.');
+    console.log('✅ Metadatos de gobernanza conformes con la normativa de Orux.');
     return;
   }
 
@@ -38,7 +38,7 @@ export async function validateGovernance({ github, context, core }) {
 
   if (!hasIssueRef) {
     errors.push(
-      'El cuerpo del PR debe incluir una referencia de cierre a un issue existente (ej: `Closes #123` o `Resolves aurea-io/repo#123`).'
+      'El cuerpo del PR debe incluir una referencia de cierre a un issue existente (ej: `Closes #123` o `Resolves Orux-Solutions/repo#123`).'
     );
   }
 
@@ -60,7 +60,7 @@ function buildReportMarkdown(isPR, errors) {
     `## ❌ Error de Gobernanza en ${isPR ? 'Pull Request' : 'Issue'}`,
     '',
     '> [!WARNING]',
-    '> No se cumplen los requisitos mínimos de gobernanza y metadatos de Aurea.',
+    '> No se cumplen los requisitos mínimos de gobernanza y metadatos de Orux.',
     '',
     '### 🔍 Motivo del rechazo:',
     ...errors.map((e) => `- 🔴 **${e}**`),
@@ -73,9 +73,9 @@ function buildReportMarkdown(isPR, errors) {
     '   - Funcionales: `area:commerce.catalog`, `area:commerce.orders`, `area:services.bookings`, `area:gastronomy.tables`, etc.',
     '   - Transversales: `area:cross`, `area:ci`, `area:docs`, `area:auth`, `area:platform.tenants`, etc.',
     '2. **Referencia de Issue (en PR):**',
-    '   - Añadí en la descripción del PR una línea como `Resolves #<numero-issue>` o `Closes aurea-io/<repo>#<numero-issue>`.',
+    '   - Añadí en la descripción del PR una línea como `Resolves #<numero-issue>` o `Closes Orux-Solutions/<repo>#<numero-issue>`.',
     '',
-    '📖 **Referencia:** Consulta [`taxonomy/structure.json`](https://github.com/aurea-io/aurea-docs/blob/main/docs/modules-dynamic/taxonomy/structure.json) y [`taxonomy/area.json`](https://github.com/aurea-io/aurea-docs/blob/main/docs/modules-dynamic/taxonomy/area.json).',
+    '📖 **Referencia:** Consulta [`taxonomy/structure.json`](https://github.com/Orux-Solutions/orux-docs/blob/main/docs/modules-dynamic/taxonomy/structure.json) y [`taxonomy/area.json`](https://github.com/Orux-Solutions/orux-docs/blob/main/docs/modules-dynamic/taxonomy/area.json).',
     '',
     REPORT_MARKER,
   ].join('\n');

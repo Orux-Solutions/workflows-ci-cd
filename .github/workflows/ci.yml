@@ -1,4 +1,4 @@
-name: Aurea CI
+name: Orux CI
 
 on:
   workflow_call:
@@ -35,21 +35,21 @@ jobs:
       - name: Checkout shared CI
         uses: actions/checkout@v4
         with:
-          repository: aurea-io/aurea-ci
+          repository: Orux-Solutions/orux-ci
           ref: main
-          path: .aurea-ci
+          path: .orux-ci
           token: ${{ github.token }}
           persist-credentials: false
       - name: Validate module manifests (shared CI repository)
-        if: github.repository == 'aurea-io/aurea-ci'
+        if: github.repository == 'Orux-Solutions/orux-ci'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: scripts/validate-manifests.sh
       - name: Validate module manifests (consumer repository)
-        if: github.repository != 'aurea-io/aurea-ci'
+        if: github.repository != 'Orux-Solutions/orux-ci'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: .aurea-ci/scripts/validate-manifests.sh
+        run: .orux-ci/scripts/validate-manifests.sh
       - name: Validate project profile
         env:
           PROJECT_TYPE: ${{ inputs.project-type }}
@@ -103,7 +103,7 @@ jobs:
         run: docker build --tag "${{ github.event.repository.name }}:test" .
       - name: Test shared release scripts
         if: inputs.project-type == 'shared-ci' || inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
-        run: .aurea-ci/scripts/test-release-scripts.sh
+        run: .orux-ci/scripts/test-release-scripts.sh
 
   dependency-audit:
     name: Audit dependencies
@@ -132,13 +132,13 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          repository: aurea-io/aurea-ci
+          repository: Orux-Solutions/orux-ci
           ref: main
-          path: .aurea-ci
+          path: .orux-ci
           token: ${{ github.token }}
           persist-credentials: false
       - name: Validate commit messages
-        run: .aurea-ci/scripts/validate-commits.sh "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+        run: .orux-ci/scripts/validate-commits.sh "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
 
   dependency-review:
     name: Dependency Review

@@ -1,4 +1,4 @@
-name: Aurea Workflow Results Summary
+name: Orux Workflow Results Summary
 
 on:
   workflow_call:

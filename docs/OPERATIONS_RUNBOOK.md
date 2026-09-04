@@ -1,6 +1,6 @@
-# Aurea: runbook operativo
+# Orux: runbook operativo
 
-Este runbook aplica a los servicios Aurea desplegados detrás de un health check y
+Este runbook aplica a los servicios Orux desplegados detrás de un health check y
 una base de datos por entorno. No depende de producción para validarse: los
 comandos de CI ejecutan la validación de manifests y los checks de release sobre
 el checkout del commit.

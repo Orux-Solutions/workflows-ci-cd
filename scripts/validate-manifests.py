@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate Aurea module manifests without contacting production services."""
+"""Validate Orux module manifests without contacting production services."""
 
 from __future__ import annotations
 

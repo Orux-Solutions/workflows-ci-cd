@@ -1,4 +1,4 @@
-name: Aurea Notifications
+name: Orux Notifications
 
 on:
   workflow_call:
@@ -114,9 +114,9 @@ jobs:
           fi
           [[ -n "${REASON}" ]] && message+=$'\nMotivo: '${REASON}
           {
-            echo 'message<<AUREA_MESSAGE'
+            echo 'message<<ORUX_MESSAGE'
             echo "${message}"
-            echo 'AUREA_MESSAGE'
+            echo 'ORUX_MESSAGE'
           } >> "${GITHUB_OUTPUT}"
       - name: Notify Telegram
         continue-on-error: true

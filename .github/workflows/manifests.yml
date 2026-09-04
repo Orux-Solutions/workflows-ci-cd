@@ -1,4 +1,4 @@
-name: Aurea Manifest Validation
+name: Orux Manifest Validation
 
 on:
   workflow_call:
@@ -19,13 +19,13 @@ jobs:
       - name: Checkout shared CI
         uses: actions/checkout@v4
         with:
-          repository: aurea-io/aurea-ci
+          repository: Orux-Solutions/orux-ci
           ref: main
-          path: .aurea-ci
+          path: .orux-ci
           token: ${{ github.token }}
           persist-credentials: false
       - name: Validate module manifests
-        run: .aurea-ci/scripts/validate-manifests.sh
+        run: .orux-ci/scripts/validate-manifests.sh
   summary:
     if: ${{ always() }}
     needs: [manifests]

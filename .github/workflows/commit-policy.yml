@@ -1,4 +1,4 @@
-name: Aurea Commit Policy
+name: Orux Commit Policy
 on: { workflow_call: {} }
 permissions: { contents: read }
 jobs:
@@ -10,9 +10,9 @@ jobs:
       - name: Load shared CI scripts
         uses: actions/checkout@v4
         with:
-          repository: aurea-io/aurea-ci
+          repository: Orux-Solutions/orux-ci
           ref: main
-          path: .aurea-ci
+          path: .orux-ci
           token: ${{ github.token }}
           persist-credentials: false
       - name: Validate commit messages
@@ -33,7 +33,7 @@ jobs:
           else
             range="HEAD"
           fi
-          .aurea-ci/scripts/validate-commits.sh "${range}"
+          .orux-ci/scripts/validate-commits.sh "${range}"
   summary:
     if: ${{ always() }}
     needs: [conventional-commits]

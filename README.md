@@ -1,6 +1,6 @@
-# Aurea CI
+# Orux CI
 
-Workflows compartidos de integración continua para los repositorios de Aurea.
+Workflows compartidos de integración continua para los repositorios de Orux.
 
 ## Cómo agregar un repo
 
@@ -14,7 +14,7 @@ on:
   push: { branches: [main] }
 jobs:
   ci:
-    uses: aurea-io/aurea-ci/.github/workflows/ci.yml@main
+    uses: Orux-Solutions/orux-ci/.github/workflows/ci.yml@main
     with:
       project-type: node-frontend
 ```
@@ -32,7 +32,7 @@ Además, cada repo agrega los workflows `security.yml`, `commit-policy.yml` y `r
 Las notificaciones de imágenes publicadas y despliegues se centralizan en
 `.github/workflows/notify.yml`. Los repositorios consumidores sólo deben llamar
 al workflow reutilizable con `secrets: inherit`; los valores deben existir como
-secretos de la organización `aurea-io`, nunca en el código.
+secretos de la organización `Orux-Solutions`, nunca en el código.
 
 Secretos soportados:
 
@@ -41,7 +41,7 @@ Secretos soportados:
 
 Variables opcionales de organización:
 
-- `AUREA_DEPLOY_URL`: URL pública común o por repositorio para incluir en avisos.
+- `ORUX_DEPLOY_URL`: URL pública común o por repositorio para incluir en avisos.
 
 Los repos nuevos deben copiar únicamente los callers documentados en
 `docs/consumer-workflows.yml` y apuntar a la referencia latest (`@main`).
@@ -55,7 +55,7 @@ El autotagger usa Conventional Commits:
 - Un breaking change incrementa major.
 - Diez `feat` desde el último tag incrementan major aunque no haya breaking change.
 
-El umbral se puede cambiar con `AUREA_FEATURES_FOR_MAJOR`, siempre con un entero positivo.
+El umbral se puede cambiar con `ORUX_FEATURES_FOR_MAJOR`, siempre con un entero positivo.
 
 ## Regla de mantenimiento
 

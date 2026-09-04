@@ -1,4 +1,4 @@
-name: Aurea Docker Publish
+name: Orux Docker Publish
 on:
   workflow_call:
     inputs:
@@ -33,13 +33,13 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: AUREA_COMMIT_ID=${{ github.sha }}
+          build-args: ORUX_COMMIT_ID=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
   notify:
     needs: publish
     if: ${{ needs.publish.result == 'success' }}
-    uses: aurea-io/aurea-ci/.github/workflows/notify.yml@v2
+    uses: Orux-Solutions/orux-ci/.github/workflows/notify.yml@v2
     with:
       event-type: image
       image: ${{ inputs.image }}

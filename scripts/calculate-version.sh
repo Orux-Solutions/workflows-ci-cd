@@ -5,9 +5,9 @@ range="${last_tag:+${last_tag}..}HEAD"
 subjects=$(git log --format=%s "${range}")
 [[ -z "${subjects}" ]] && exit 0
 feature_count=$(grep -Ec '^feat(\([^)]*\))?!?:' <<< "${subjects}" || true)
-feature_threshold=${AUREA_FEATURES_FOR_MAJOR:-10}
+feature_threshold=${ORUX_FEATURES_FOR_MAJOR:-10}
 if ! [[ "${feature_threshold}" =~ ^[1-9][0-9]*$ ]]; then
-  echo "AUREA_FEATURES_FOR_MAJOR must be a positive integer" >&2
+  echo "ORUX_FEATURES_FOR_MAJOR must be a positive integer" >&2
   exit 2
 fi
 if grep -Eq '(^|!)(\(|:)|BREAKING CHANGE' <<< "${subjects}"; then bump=major
