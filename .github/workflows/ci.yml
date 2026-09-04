@@ -41,12 +41,12 @@ jobs:
           token: ${{ github.token }}
           persist-credentials: false
       - name: Validate module manifests (shared CI repository)
-        if: github.repository == 'Orux-Solutions/orux-ci'
+        if: github.repository == 'Orux-Solutions/workflows-ci-cd'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: scripts/validate-manifests.sh
       - name: Validate module manifests (consumer repository)
-        if: github.repository != 'Orux-Solutions/orux-ci'
+        if: github.repository != 'Orux-Solutions/workflows-ci-cd'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: .orux-ci/scripts/validate-manifests.sh
@@ -132,7 +132,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          repository: Orux-Solutions/orux-ci
+          repository: Orux-Solutions/workflows-ci-cd
           ref: main
           path: .orux-ci
           token: ${{ github.token }}
