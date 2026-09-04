@@ -84,7 +84,7 @@ jobs:
         run: npx --no-install prisma generate
       - name: Run tests
         if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-pages'
-        run: npm test
+        run: npm test --if-present
       - name: Run backend coverage
         if: inputs.project-type == 'node-backend'
         run: npm run test:cov --if-present
