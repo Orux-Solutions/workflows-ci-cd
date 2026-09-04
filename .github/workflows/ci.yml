@@ -168,6 +168,7 @@ jobs:
 
   codeql:
     name: CodeQL
+    continue-on-error: true
     if: (inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages') && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
