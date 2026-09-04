@@ -119,7 +119,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
+        run: npm audit --omit=dev --audit-level=critical
 
   conventional-commits:
     name: Validate commits
