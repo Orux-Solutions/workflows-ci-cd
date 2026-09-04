@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+  - job_name: business-backend
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["business-backend:3001"]
+  - job_name: admin-backend
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["admin-backend:3002"]
+  - job_name: client-backend
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["client-backend:3003"]

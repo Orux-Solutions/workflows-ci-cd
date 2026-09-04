@@ -13,6 +13,31 @@ services:
       timeout: 5s
       retries: 12
 
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    ports: ["${PROMETHEUS_PORT:-9090}:9090"]
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports: ["${GRAFANA_PORT:-3000}:3000"]
+
   business-backend:
     image: ${BUSINESS_BACKEND_IMAGE:-ghcr.io/Orux-Solutions/backoffice-be-orux}:${BUSINESS_BACKEND_VERSION:-latest}
     restart: unless-stopped
@@ -64,3 +89,5 @@ services:
 
 volumes:
   mongo-data:
+  prometheus-data:
+  grafana-data:
