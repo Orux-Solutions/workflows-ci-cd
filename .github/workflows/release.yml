@@ -11,7 +11,7 @@ on:
       deploy-workflow:
         description: Workflow to dispatch after publishing the release
         required: false
-        default: deploy.yml
+        default: ''
         type: string
 
 permissions:
