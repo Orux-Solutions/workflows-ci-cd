@@ -10,7 +10,7 @@ jobs:
       - name: Load shared CI scripts
         uses: actions/checkout@v4
         with:
-          repository: Orux-Solutions/orux-ci
+          repository: Orux-Solutions/workflows-ci-cd
           ref: main
           path: .orux-ci
           token: ${{ github.token }}
