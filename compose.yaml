@@ -39,7 +39,7 @@ services:
     ports: ["${GRAFANA_PORT:-3000}:3000"]
 
   business-backend:
-    image: ${BUSINESS_BACKEND_IMAGE:-ghcr.io/Orux-Solutions/backoffice-be-orux}:${BUSINESS_BACKEND_VERSION:-latest}
+    image: ${BUSINESS_BACKEND_IMAGE:-ghcr.io/orux-solutions/backoffice-be-orux}:${BUSINESS_BACKEND_VERSION:-latest}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -51,7 +51,7 @@ services:
     ports: ["${BUSINESS_BACKEND_PORT:-3001}:3001"]
 
   admin-backend:
-    image: ${ADMIN_BACKEND_IMAGE:-ghcr.io/Orux-Solutions/orux-admin-backend}:${ADMIN_BACKEND_VERSION:-latest}
+    image: ${ADMIN_BACKEND_IMAGE:-ghcr.io/orux-solutions/orux-admin-backend}:${ADMIN_BACKEND_VERSION:-latest}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -62,7 +62,7 @@ services:
     ports: ["${ADMIN_BACKEND_PORT:-3002}:3002"]
 
   client-backend:
-    image: ${CLIENT_BACKEND_IMAGE:-ghcr.io/Orux-Solutions/orux-client-backend}:${CLIENT_BACKEND_VERSION:-latest}
+    image: ${CLIENT_BACKEND_IMAGE:-ghcr.io/orux-solutions/orux-client-backend}:${CLIENT_BACKEND_VERSION:-latest}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -73,17 +73,17 @@ services:
     ports: ["${CLIENT_BACKEND_PORT:-3003}:3003"]
 
   business-frontend:
-    image: ${BUSINESS_FRONTEND_IMAGE:-ghcr.io/Orux-Solutions/backoffice-fe-orux}:${BUSINESS_FRONTEND_VERSION:-latest}
+    image: ${BUSINESS_FRONTEND_IMAGE:-ghcr.io/orux-solutions/backoffice-fe-orux}:${BUSINESS_FRONTEND_VERSION:-latest}
     restart: unless-stopped
     ports: ["${BUSINESS_FRONTEND_PORT:-8080}:80"]
 
   admin-frontend:
-    image: ${ADMIN_FRONTEND_IMAGE:-ghcr.io/Orux-Solutions/orux-admin-frontend}:${ADMIN_FRONTEND_VERSION:-latest}
+    image: ${ADMIN_FRONTEND_IMAGE:-ghcr.io/orux-solutions/orux-admin-frontend}:${ADMIN_FRONTEND_VERSION:-latest}
     restart: unless-stopped
     ports: ["${ADMIN_FRONTEND_PORT:-8081}:80"]
 
   client-frontend:
-    image: ${CLIENT_FRONTEND_IMAGE:-ghcr.io/Orux-Solutions/orux-client-frontend}:${CLIENT_FRONTEND_VERSION:-latest}
+    image: ${CLIENT_FRONTEND_IMAGE:-ghcr.io/orux-solutions/orux-client-frontend}:${CLIENT_FRONTEND_VERSION:-latest}
     restart: unless-stopped
     ports: ["${CLIENT_FRONTEND_PORT:-8082}:80"]
 
