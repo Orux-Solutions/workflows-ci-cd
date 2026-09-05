@@ -169,10 +169,11 @@ def deploy(args):
     env = load_env(args.env_file)
     services = (args.services or env.get("ORUX_DEPLOY_SERVICES", "")).split()
     authenticate_ghcr(env)
-    if configure_runner(env):
-        for service in ("buildkit", "github-runner"):
-            if service not in services:
-                services.append(service)
+    # Runners are long-lived capacity, not application services. Do not add
+    # them to every polling deployment: recreating them would interrupt jobs.
+    runner_enabled = configure_runner(env)
+    if runner_enabled and "buildkit" not in services:
+        services.append("buildkit")
     # A Cloudflare Tunnel is opt-in. The token is created in the Cloudflare
     # dashboard and kept only in the local .env file.
     if env.get("CLOUDFLARE_TUNNEL_TOKEN") and "cloudflared" not in services:
@@ -187,8 +188,6 @@ def deploy(args):
     # Do not remove orphaned containers: runner replicas may be managed by a
     # separate scaling command and must not be taken offline by a poll cycle.
     up_args = ["up", "-d"]
-    if "github-runner" in services:
-        up_args.extend(["--scale", f"github-runner={runner_replicas(env)}"])
     compose(args, env, *up_args, *services)
     health_url = args.health_url or env.get("ORUX_HEALTH_URL", "")
     if health_url and not healthy(health_url, args.health_timeout):
