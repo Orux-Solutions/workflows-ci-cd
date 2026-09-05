@@ -130,7 +130,9 @@ jobs:
   conventional-commits:
     name: Validate commits
     if: github.event_name == 'pull_request'
-    runs-on: [self-hosted, linux, x64, orux-ci]
+    runs-on:
+      group: Default
+      labels: [self-hosted, linux, x64, orux-ci]
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
@@ -150,7 +152,9 @@ jobs:
   dependency-review:
     name: Dependency Review
     if: github.event_name == 'pull_request'
-    runs-on: [self-hosted, linux, x64, orux-ci]
+    runs-on:
+      group: Default
+      labels: [self-hosted, linux, x64, orux-ci]
     timeout-minutes: 5
     steps:
       - name: Check Dependency Graph availability
@@ -196,7 +200,9 @@ jobs:
   gitleaks:
     name: Detect secrets
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
-    runs-on: [self-hosted, linux, x64, orux-ci]
+    runs-on:
+      group: Default
+      labels: [self-hosted, linux, x64, orux-ci]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
