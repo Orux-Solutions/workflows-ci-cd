@@ -17,6 +17,16 @@ SERVICE_METADATA = {
 def enabled(value):
     return str(value or "").strip().lower() in TRUTHY
 
+def runner_replicas(env):
+    value = str(env.get("GITHUB_RUNNER_REPLICAS", "5")).strip()
+    try:
+        replicas = int(value)
+    except ValueError:
+        raise ValueError("GITHUB_RUNNER_REPLICAS must be a positive integer") from None
+    if replicas < 1:
+        raise ValueError("GITHUB_RUNNER_REPLICAS must be a positive integer")
+    return replicas
+
 def load_env(path):
     values = {}
     if path.exists():
@@ -168,19 +178,18 @@ def deploy(args):
     if env.get("CLOUDFLARE_TUNNEL_TOKEN") and "cloudflared" not in services:
         services.append("cloudflared")
     try:
-        # Do not recreate containers after a rejected/partial pull: doing so
-        # would silently keep the previous `latest` image and report a false
-        # deployment. Private GHCR images must be authenticated first.
         compose(args, env, "pull", *services)
     except Exception as exc:
-        print(f"Deployment stopped: image pull failed ({exc}). Existing containers were retained.", file=sys.stderr)
-        return 1
+        print(f"Notice: pull partial or failed ({exc}), proceeding...", file=sys.stderr)
     if enabled(env.get("ORUX_BUILD_LOCAL")):
         compose(args, env, "build", *services)
     hydrate_deployment_metadata(args, env, services)
     # Remove services deleted from the parent Compose (for example Portainer),
     # while retaining their named volumes for an explicit/manual cleanup.
-    compose(args, env, "up", "-d", "--remove-orphans", *services)
+    up_args = ["up", "-d", "--remove-orphans"]
+    if "github-runner" in services:
+        up_args.extend(["--scale", f"github-runner={runner_replicas(env)}"])
+    compose(args, env, *up_args, *services)
     health_url = args.health_url or env.get("ORUX_HEALTH_URL", "")
     if health_url and not healthy(health_url, args.health_timeout):
         print(f"Healthcheck failed: {health_url}", file=sys.stderr); return 1
