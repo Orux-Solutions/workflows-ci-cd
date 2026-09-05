@@ -58,6 +58,7 @@ services:
           create_host_path: false
     tmpfs:
       - /runner:rw,exec,nosuid,nodev,size=${GITHUB_RUNNER_WORKSPACE_SIZE:-6g},uid=1001,gid=123,mode=0750
+      - /home/runner/.docker:rw,nosuid,nodev,size=256m,uid=1001,gid=123,mode=0700
       - /tmp:rw,nosuid,nodev,size=512m,uid=1001,gid=123,mode=1770
     networks:
       - github-build
