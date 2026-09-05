@@ -43,6 +43,11 @@ Si el autodeployer informa `403 Forbidden` o `unauthorized` contra `ghcr.io`,
 verificar el login del usuario del servicio con un token que tenga
 `read:packages`. El autodeployer conserva los contenedores actuales hasta que
 el pull completo sea autorizado.
+
+El workflow `Release` debe crear el GitHub Release con el secreto
+`ORUX_RELEASE_TOKEN`, no con `GITHUB_TOKEN`: GitHub no inicia workflows por
+eventos generados por `GITHUB_TOKEN`. `Publish Docker image` se mantiene
+intencionalmente limitado a `release.published`.
 3. Validar health/readiness y el flujo con un tenant de prueba.
 4. Documentar causa, duración, impacto y commit restaurado.
 

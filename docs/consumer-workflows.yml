@@ -37,7 +37,8 @@ permissions:
 jobs:
   release:
     uses: Orux-Solutions/workflows-ci-cd/.github/workflows/release.yml@main
-    secrets: inherit
+    secrets:
+      ORUX_RELEASE_TOKEN: ${{ secrets.ORUX_RELEASE_TOKEN }}
 
 ---
 name: Publish Docker image
