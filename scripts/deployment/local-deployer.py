@@ -168,9 +168,13 @@ def deploy(args):
     if env.get("CLOUDFLARE_TUNNEL_TOKEN") and "cloudflared" not in services:
         services.append("cloudflared")
     try:
-        compose(args, env, "pull", "--ignore-pull-failures", *services)
+        # Do not recreate containers after a rejected/partial pull: doing so
+        # would silently keep the previous `latest` image and report a false
+        # deployment. Private GHCR images must be authenticated first.
+        compose(args, env, "pull", *services)
     except Exception as exc:
-        print(f"Notice: pull partial or failed ({exc}), proceeding...", file=sys.stderr)
+        print(f"Deployment stopped: image pull failed ({exc}). Existing containers were retained.", file=sys.stderr)
+        return 1
     if enabled(env.get("ORUX_BUILD_LOCAL")):
         compose(args, env, "build", *services)
     hydrate_deployment_metadata(args, env, services)
