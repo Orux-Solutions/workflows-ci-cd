@@ -184,9 +184,9 @@ def deploy(args):
     if enabled(env.get("ORUX_BUILD_LOCAL")):
         compose(args, env, "build", *services)
     hydrate_deployment_metadata(args, env, services)
-    # Remove services deleted from the parent Compose (for example Portainer),
-    # while retaining their named volumes for an explicit/manual cleanup.
-    up_args = ["up", "-d", "--remove-orphans"]
+    # Do not remove orphaned containers: runner replicas may be managed by a
+    # separate scaling command and must not be taken offline by a poll cycle.
+    up_args = ["up", "-d"]
     if "github-runner" in services:
         up_args.extend(["--scale", f"github-runner={runner_replicas(env)}"])
     compose(args, env, *up_args, *services)
