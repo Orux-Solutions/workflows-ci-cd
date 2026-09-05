@@ -14,7 +14,7 @@ on:
         required: false
         default: "22"
       run-codeql:
-        description: Run CodeQL when Advanced Security is enabled for the repository
+        description: Run CodeQL when Advanced Security is enabled for the repository; otherwise keep it skipped
         type: boolean
         required: false
         default: false
