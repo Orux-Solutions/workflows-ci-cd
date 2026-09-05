@@ -11,13 +11,24 @@ services:
   mongo:
     image: mongo:7.0
     restart: unless-stopped
+    command:
+      - bash
+      - -c
+      - |
+        if [ ! -f /data/db/mongo-keyfile ]; then
+          openssl rand -base64 756 > /data/db/mongo-keyfile
+          chmod 400 /data/db/mongo-keyfile
+          chown 999:999 /data/db/mongo-keyfile
+        fi
+        exec docker-entrypoint.sh mongod --replSet rs0 --keyFile /data/db/mongo-keyfile --bind_ip_all
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-orux}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD is required}
     volumes:
       - mongo-data:/data/db
+    ports: ["127.0.0.1:${MONGO_PORT:-27017}:27017"]
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' | grep 1"]
+      test: ["CMD-SHELL", "mongosh -u ${MONGO_ROOT_USERNAME:-orux} -p ${MONGO_ROOT_PASSWORD} --authenticationDatabase admin --quiet --eval 'try { rs.status().ok } catch (e) { rs.initiate({ _id: \"rs0\", members: [{ _id: 0, host: \"mongo:27017\" }] }).ok }' | grep 1"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -59,12 +70,16 @@ services:
     image: ${BUSINESS_BACKEND_IMAGE:-ghcr.io/orux-solutions/backoffice-be-orux}:${BUSINESS_BACKEND_VERSION:-latest}
     build:
       context: ../business-backend
+      args:
+        ORUX_COMMIT_ID: ${BUSINESS_BACKEND_COMMIT:-unknown}
     restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 3001
       FRONTEND_URL: https://business.orux.ar
-      DATABASE_URL: mongodb://${MONGO_ROOT_USERNAME:-orux}:${MONGO_ROOT_PASSWORD}@mongo:27017/orux?authSource=admin
+      DATABASE_URL: mongodb://${MONGO_ROOT_USERNAME:-orux}:${MONGO_ROOT_PASSWORD}@mongo:27017/orux?authSource=admin&replicaSet=rs0
+      APP_VERSION: ${BUSINESS_BACKEND_VERSION:-v2.1.0}
+      ORUX_TAG: ${BUSINESS_BACKEND_VERSION:-v2.1.0}
       ORUX_COMMIT_ID: ${BUSINESS_BACKEND_COMMIT:-unknown}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-orux_jwt_access_secret_production_key_2026}
       JWT_ACCESS_EXPIRES_IN: "15m"
@@ -82,7 +97,15 @@ services:
       NODE_ENV: production
       PORT: 3002
       FRONTEND_URL: https://admin.orux.ar
-      DATABASE_URL: mongodb://${MONGO_ROOT_USERNAME:-orux}:${MONGO_ROOT_PASSWORD}@mongo:27017/orux?authSource=admin
+      DATABASE_URL: mongodb://${MONGO_ROOT_USERNAME:-orux}:${MONGO_ROOT_PASSWORD}@mongo:27017/orux?authSource=admin&replicaSet=rs0
+      APP_VERSION: ${ADMIN_BACKEND_VERSION:-v2.2.0}
+      ORUX_TAG: ${ADMIN_BACKEND_VERSION:-v2.2.0}
+      ORUX_COMMIT_ID: ${ADMIN_BACKEND_COMMIT:-unknown}
+      BUSINESS_BACKEND_URL: http://business-backend:3001
+      CLIENT_BACKEND_URL: http://client-backend:3003
+      ADMIN_FRONTEND_VERSION: ${ADMIN_FRONTEND_VERSION:-v2.2.0}
+      BUSINESS_FRONTEND_VERSION: ${BUSINESS_FRONTEND_VERSION:-v2.1.0}
+      CLIENT_FRONTEND_VERSION: ${CLIENT_FRONTEND_VERSION:-v2.1.0}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-orux_jwt_access_secret_production_key_2026}
       JWT_ACCESS_EXPIRES_IN: "1h"
       JWT_REFRESH_EXPIRES_IN: "7d"
@@ -94,12 +117,17 @@ services:
     image: ${CLIENT_BACKEND_IMAGE:-ghcr.io/orux-solutions/orux-client-backend}:${CLIENT_BACKEND_VERSION:-latest}
     build:
       context: ../client-backend
+      args:
+        ORUX_COMMIT_ID: ${CLIENT_BACKEND_COMMIT:-unknown}
     restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 3003
       CLIENT_FRONTEND_URL: https://orux.ar
-      DATABASE_URL: mongodb://${MONGO_ROOT_USERNAME:-orux}:${MONGO_ROOT_PASSWORD}@mongo:27017/orux?authSource=admin
+      DATABASE_URL: mongodb://${MONGO_ROOT_USERNAME:-orux}:${MONGO_ROOT_PASSWORD}@mongo:27017/orux?authSource=admin&replicaSet=rs0
+      APP_VERSION: ${CLIENT_BACKEND_VERSION:-v2.1.0}
+      ORUX_TAG: ${CLIENT_BACKEND_VERSION:-v2.1.0}
+      ORUX_COMMIT_ID: ${CLIENT_BACKEND_COMMIT:-unknown}
     depends_on:
       mongo: { condition: service_healthy }
     ports: ["0.0.0.0:${CLIENT_BACKEND_PORT:-3003}:3003"]
@@ -110,6 +138,7 @@ services:
       context: ../business-frontend
       args:
         ORUX_BUSINESS_API: ${ORUX_BUSINESS_API:-https://business-api.orux.ar/api}
+        APP_VERSION: ${BUSINESS_FRONTEND_VERSION:-v2.1.0}
     restart: unless-stopped
     ports: ["0.0.0.0:${BUSINESS_FRONTEND_PORT:-8083}:80"]
 
@@ -119,6 +148,7 @@ services:
       context: ../admin-frontend
       args:
         ORUX_ADMIN_API: ${ORUX_ADMIN_API:-https://admin-api.orux.ar/api}
+        APP_VERSION: ${ADMIN_FRONTEND_VERSION:-v2.2.0}
     restart: unless-stopped
     ports: ["0.0.0.0:${ADMIN_FRONTEND_PORT:-8084}:80"]
 
@@ -129,6 +159,7 @@ services:
       args:
         ORUX_CLIENT_API: ${ORUX_CLIENT_API:-https://api.orux.ar/api}
         ORUX_BUSINESS_API: ${ORUX_BUSINESS_API:-https://business-api.orux.ar/api}
+        APP_VERSION: ${CLIENT_FRONTEND_VERSION:-v2.1.0}
     restart: unless-stopped
     ports: ["0.0.0.0:${CLIENT_FRONTEND_PORT:-8082}:80"]
 

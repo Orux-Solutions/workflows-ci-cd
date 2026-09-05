@@ -1,2 +1,2 @@
 #!/bin/sh
-git diff --cached --name-only | grep -E '(^|/)\.env($|\.)|(^|/)(id_rsa|.*\.pem)$' >/dev/null && { echo 'Commit bloqueado: secreto detectado.'; exit 1; } || true
+git diff --cached --name-only | grep -vE '\.env\.(example|template)$' | grep -E '(^|/)\.env($|\.)|(^|/)(id_rsa|.*\.pem)$' >/dev/null && { echo 'Commit bloqueado: secreto detectado.'; exit 1; } || true
