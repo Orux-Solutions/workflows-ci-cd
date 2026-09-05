@@ -75,7 +75,7 @@ function buildReportMarkdown(isPR, errors) {
     '2. **Referencia de Issue (en PR):**',
     '   - Añadí en la descripción del PR una línea como `Resolves #<numero-issue>` o `Closes Orux-Solutions/<repo>#<numero-issue>`.',
     '',
-    '📖 **Referencia:** Consulta [`taxonomy/structure.json`](https://github.com/Orux-Solutions/orux-docs/blob/main/docs/modules-dynamic/taxonomy/structure.json) y [`taxonomy/area.json`](https://github.com/Orux-Solutions/orux-docs/blob/main/docs/modules-dynamic/taxonomy/area.json).',
+    '📖 **Referencia:** Consulta [`taxonomy/structure.json`](https://github.com/Orux-Solutions/documentaciones/blob/main/docs/modules-dynamic/taxonomy/structure.json) y [`taxonomy/area.json`](https://github.com/Orux-Solutions/documentaciones/blob/main/docs/modules-dynamic/taxonomy/area.json).',
     '',
     REPORT_MARKER,
   ].join('\n');

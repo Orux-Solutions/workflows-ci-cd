@@ -1,1 +1,7 @@
 __pycache__
+.env
+.env.*
+!.env.example
+*.lock
+.orux-deploy.lock
+cloudflared/

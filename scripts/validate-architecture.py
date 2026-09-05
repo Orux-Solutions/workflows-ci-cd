@@ -34,10 +34,12 @@ def load_taxonomy() -> tuple[dict[str, set[str]], dict[str, str]]:
                 paths[f"{sec_key}.{page_key}"] = p_path
         return canonical, paths
 
-    # 1. Look for taxonomy/structure.json in orux-docs (workspace or .orux-docs checkout)
+    # 1. Look for taxonomy/structure.json in documentaciones / orux-docs (workspace or checkout)
     candidates = [
         ROOT / "docs" / "modules-dynamic" / "taxonomy" / "structure.json",
+        ROOT / ".documentaciones" / "docs" / "modules-dynamic" / "taxonomy" / "structure.json",
         ROOT / ".orux-docs" / "docs" / "modules-dynamic" / "taxonomy" / "structure.json",
+        ROOT.parent / "documentaciones" / "docs" / "modules-dynamic" / "taxonomy" / "structure.json",
         ROOT.parent / "orux-docs" / "docs" / "modules-dynamic" / "taxonomy" / "structure.json",
     ]
     for c in candidates:
@@ -45,25 +47,30 @@ def load_taxonomy() -> tuple[dict[str, set[str]], dict[str, str]]:
             try:
                 data = json.loads(c.read_text(encoding="utf-8"))
                 canonical, paths = parse(data)
-                print(f"📋 Taxonomía oficial cargada desde orux-docs: {c}")
+                print(f"📋 Taxonomía oficial cargada desde documentaciones: {c}")
                 return canonical, paths
             except Exception as exc:
                 print(f"⚠️ Error al leer {c}: {exc}", file=sys.stderr)
 
-    # 2. In CI: fetch live from Orux-Solutions/orux-docs repository via GitHub API / Raw
+    # 2. In CI: fetch live from Orux-Solutions/documentaciones repository via GitHub API / Raw
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
-    url = "https://raw.githubusercontent.com/Orux-Solutions/orux-docs/main/docs/modules-dynamic/taxonomy/structure.json"
-    try:
-        req = urllib.request.Request(url)
-        if token:
-            req.add_header("Authorization", f"Bearer {token}")
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            canonical, paths = parse(data)
-            print("📋 Taxonomía oficial descargada dinámicamente desde Orux-Solutions/orux-docs")
-            return canonical, paths
-    except Exception as exc:
-        print(f"⚠️ No se pudo obtener taxonomy desde orux-docs: {exc}", file=sys.stderr)
+    urls = [
+        "https://raw.githubusercontent.com/Orux-Solutions/documentaciones/main/docs/modules-dynamic/taxonomy/structure.json",
+        "https://raw.githubusercontent.com/Orux-Solutions/orux-docs/main/docs/modules-dynamic/taxonomy/structure.json",
+    ]
+    for url in urls:
+        try:
+            req = urllib.request.Request(url)
+            if token:
+                req.add_header("Authorization", f"Bearer {token}")
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                canonical, paths = parse(data)
+                print(f"📋 Taxonomía oficial descargada dinámicamente desde {url}")
+                return canonical, paths
+        except Exception:
+            continue
+    print(f"⚠️ No se pudo obtener taxonomy desde repositorios remotos", file=sys.stderr)
 
     print("⚠️ Usando taxonomía por defecto", file=sys.stderr)
     default_sections = {
@@ -206,7 +213,7 @@ def validate_page_routes(root: Path, canonical_sections: dict[str, set[str]], ca
                         rel_file = tenant_service
                     problems.append(
                         f"Ruta de página plana o no canónica detectada en {rel_file}: {token}. "
-                        f"Toda ruta de página debe tener como prefijo su sección canónica '/${{sectionKey}}/${{pageKey}}' según Regla 4.5 de orux-docs."
+                        f"Toda ruta de página debe tener como prefijo su sección canónica '/${{sectionKey}}/${{pageKey}}' según Regla 4.5 de documentaciones."
                     )
 
         # 2. Inspect Frontend App.tsx
@@ -233,7 +240,7 @@ def validate_page_routes(root: Path, canonical_sections: dict[str, set[str]], ca
                         canonical_path = canonical_paths.get(f"{sec}.{page_key}", f"/{sec}/{page_key}")
                         problems.append(
                             f"Ruta de página plana sin prefijo de sección en {rel_app}: path='{match.group(1)}'. "
-                            f"Debe incluir su sección canónica: path='{canonical_path.lstrip('/')}' (o '{canonical_path}') según Regla 4.5 de orux-docs."
+                            f"Debe incluir su sección canónica: path='{canonical_path.lstrip('/')}' (o '{canonical_path}') según Regla 4.5 de documentaciones."
                         )
                 elif len(parts) >= 2:
                     sec, page = parts[0], parts[1]
@@ -339,7 +346,7 @@ def report_and_exit(problems: list[str]) -> None:
         "### 💡 ¿Cómo corregir este problema?",
         "",
         "#### 1. Si estás agregando una nueva página legítima:",
-        "1. Registrá la página y sus módulos en [`docs/modules-dynamic/taxonomy/structure.json`](https://github.com/Orux-Solutions/orux-docs/blob/main/docs/modules-dynamic/taxonomy/structure.json) en la sección correspondiente (`commerce`, `services`, `gastronomy`, etc.).",
+        "1. Registrá la página y sus módulos en [`docs/modules-dynamic/taxonomy/structure.json`](https://github.com/Orux-Solutions/documentaciones/blob/main/docs/modules-dynamic/taxonomy/structure.json) en la sección correspondiente (`commerce`, `services`, `gastronomy`, etc.).",
         "2. Creá el contrato tipado `features.ts` en Frontend y el controlador con `@FeatureDomain('<sección>.<página>')` en Backend.",
         "3. Hacé commit de ambos cambios en tu PR.",
         "",
@@ -349,7 +356,7 @@ def report_and_exit(problems: list[str]) -> None:
         "- **Frontend:** Asegurate de que `features.ts` exporte claves con el prefijo `'<sección>.<página>.'`.",
         "- **Tolerancia Cero:** No uses carpetas paraguas como `restaurant/` o carpetas planas sueltas.",
         "",
-        "📖 **Documentación Normativa:** [Regla 7 de Arquitectura en orux-docs](https://github.com/Orux-Solutions/orux-docs/blob/main/docs/modules-dynamic/technical.md)",
+        "📖 **Documentación Normativa:** [Regla 7 de Arquitectura en documentaciones](https://github.com/Orux-Solutions/documentaciones/blob/main/docs/modules-dynamic/technical.md)",
         "",
         "<!-- orux-architecture-report -->",
     ])
