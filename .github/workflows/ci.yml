@@ -13,6 +13,11 @@ on:
         type: string
         required: false
         default: "22"
+      run-codeql:
+        description: Run CodeQL when Advanced Security is enabled for the repository
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   actions: read
@@ -170,7 +175,7 @@ jobs:
 
   codeql:
     name: CodeQL
-    if: (inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages') && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
+    if: inputs.run-codeql && (inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages') && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -178,11 +183,11 @@ jobs:
         with:
           persist-credentials: false
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
       - name: Analyze with CodeQL
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
 
   gitleaks:
     name: Detect secrets
