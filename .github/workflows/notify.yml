@@ -16,12 +16,12 @@ on:
       image:
         description: Published image name
         required: false
-        default: ''
+        default: ""
         type: string
       version:
         description: Published version
         required: false
-        default: ''
+        default: ""
         type: string
       environment:
         description: Deployment environment
@@ -31,12 +31,12 @@ on:
       deploy-url:
         description: Optional deployed URL
         required: false
-        default: ''
+        default: ""
         type: string
       source-commit:
         description: Commit that produced the artifact or deployment
         required: false
-        default: ''
+        default: ""
         type: string
       status:
         description: Result of the operation
@@ -46,17 +46,17 @@ on:
       reason:
         description: Reason when an operation is skipped or fails
         required: false
-        default: ''
+        default: ""
         type: string
       commit-message:
         description: Commit message that triggered the operation
         required: false
-        default: ''
+        default: ""
         type: string
       discord-message-id:
         description: Existing Discord message to update instead of creating a new one
         required: false
-        default: ''
+        default: ""
         type: string
     outputs:
       discord-message-id:
@@ -177,9 +177,3 @@ jobs:
           message_id="$(jq -r '.id // empty' <<<"${response}")"
           [[ -n "${message_id}" ]] || { echo 'Discord no devolvió el ID del mensaje.' >&2; exit 1; }
           echo "message-id=${message_id}" >> "$GITHUB_OUTPUT"
-  summary:
-    if: ${{ always() }}
-    needs: [notify]
-    uses: ./.github/workflows/workflow-summary.yml
-    with:
-      needs_json: ${{ toJSON(needs) }}

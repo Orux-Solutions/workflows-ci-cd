@@ -14,9 +14,3 @@ permissions:
 jobs:
   governance:
     uses: ./.github/workflows/governance.yml
-  summary:
-    if: ${{ always() }}
-    needs: [governance]
-    uses: ./.github/workflows/workflow-summary.yml
-    with:
-      needs_json: ${{ toJSON(needs) }}

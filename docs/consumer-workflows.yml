@@ -1,39 +1,26 @@
-# Plantillas mínimas para cada repositorio Orux.
-# Copiar los jobs necesarios a .github/workflows/ y mantener la lógica en orux-ci.
+# Callers mínimos para cada repositorio Orux.
+# La calidad, seguridad y política de commits viven en un único workflow reusable.
 
-name: CI
+name: Orux · PR Quality
 on:
   pull_request:
-  push:
-    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+concurrency:
+  group: pr-quality-${{ github.repository }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 permissions:
   contents: read
+  pull-requests: write
+  issues: write
   security-events: write
 jobs:
-  ci:
-    uses: Orux-Solutions/orux-ci/.github/workflows/ci.yml@main
+  quality:
+    uses: Orux-Solutions/workflows-ci-cd/.github/workflows/ci.yml@main
     with:
       # node-backend | node-frontend | node-pages | docs | shared-ci
       project-type: node-frontend
 
 ---
-
-name: Security
-on:
-  pull_request:
-  push:
-    branches: [main]
-permissions:
-  contents: read
-  security-events: write
-jobs:
-  security:
-    uses: Orux-Solutions/orux-ci/.github/workflows/security.yml@main
-    with:
-      project-type: node-frontend
-
----
-
 name: Release
 on:
   push:
@@ -44,23 +31,28 @@ permissions:
   actions: write
 jobs:
   release:
-    uses: Orux-Solutions/orux-ci/.github/workflows/release.yml@main
+    uses: Orux-Solutions/workflows-ci-cd/.github/workflows/release.yml@main
     secrets: inherit
 
 ---
-
-name: Deploy notification
+name: Publish Docker image
 on:
-  workflow_run:
-    workflows: [Deploy]
-    types: [completed]
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        description: Release tag to publish
+        required: true
+        type: string
+permissions:
+  contents: read
+  packages: write
 jobs:
-  notify:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    uses: Orux-Solutions/orux-ci/.github/workflows/notify.yml@main
+  publish:
+    uses: Orux-Solutions/workflows-ci-cd/.github/workflows/docker-publish.yml@main
     with:
-      event-type: deploy
-      environment: production
-      deploy-url: ${{ vars.ORUX_DEPLOY_URL }}
-      source-commit: ${{ github.event.workflow_run.head_sha }}
+      image: ghcr.io/orux-solutions/REPOSITORY_NAME
+      version: ${{ inputs.release-tag || github.event.release.tag_name }}
+      ref: ${{ inputs.release-tag || github.event.release.tag_name || github.ref }}
     secrets: inherit

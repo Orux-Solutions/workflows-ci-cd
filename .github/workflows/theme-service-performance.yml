@@ -15,12 +15,12 @@ on:
       vus:
         description: Concurrent virtual users
         required: true
-        default: '20'
+        default: "20"
         type: string
       duration:
         description: Test duration in seconds
         required: true
-        default: '30'
+        default: "30"
         type: string
 
 permissions:
@@ -60,9 +60,3 @@ jobs:
         with:
           name: theme-service-performance
           path: theme-service-performance.json
-  summary:
-    if: ${{ always() }}
-    needs: [measure]
-    uses: ./.github/workflows/workflow-summary.yml
-    with:
-      needs_json: ${{ toJSON(needs) }}

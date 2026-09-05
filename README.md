@@ -7,14 +7,13 @@ Workflows compartidos de integración continua para los repositorios de Orux.
 Cada aplicación sólo necesita callers pequeños. No hay que copiar pasos ni inventar comandos; el workflow de CI compartido incluye el gate de calidad y los controles de seguridad:
 
 ```yaml
-# .github/workflows/ci.yml
+# .github/workflows/pr-quality.yml
 name: CI
 on:
   pull_request:
-  push: { branches: [main] }
 jobs:
-  ci:
-    uses: Orux-Solutions/orux-ci/.github/workflows/ci.yml@main
+  quality:
+    uses: Orux-Solutions/workflows-ci-cd/.github/workflows/ci.yml@main
     with:
       project-type: node-frontend
 ```
@@ -25,7 +24,7 @@ Perfiles disponibles:
 - `node-backend`: instala dependencias, ejecuta `npm run lint`, `npm test` y `npm run build`.
 - `node-pages`: instala dependencias, ejecuta `npm run check`, `npm test` y valida el Dockerfile.
 
-Además, cada repo agrega los workflows `security.yml`, `commit-policy.yml` y `release.yml` apuntando a `@main`, que representa la versión latest del CI compartido.
+Cada repo agrega además `release.yml` y `docker-publish.yml`. No se agregan `security.yml`, `commit-policy.yml` ni workflows de summary: sus responsabilidades viven en el único workflow de calidad del PR.
 
 ## Notificaciones cross-repo
 
