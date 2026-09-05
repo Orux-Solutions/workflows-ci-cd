@@ -26,8 +26,7 @@ jobs:
   validate:
     name: Validate ${{ inputs.project-type }}
     runs-on:
-      group: Default
-      labels: [self-hosted, linux, x64, orux-ci]
+      labels: orux-ci
     timeout-minutes: 15
     steps:
       - name: Checkout application
@@ -112,8 +111,7 @@ jobs:
     name: Audit dependencies
     if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
     runs-on:
-      group: Default
-      labels: [self-hosted, linux, x64, orux-ci]
+      labels: orux-ci
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -131,8 +129,7 @@ jobs:
     name: Validate commits
     if: github.event_name == 'pull_request'
     runs-on:
-      group: Default
-      labels: [self-hosted, linux, x64, orux-ci]
+      labels: orux-ci
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
@@ -153,8 +150,7 @@ jobs:
     name: Dependency Review
     if: github.event_name == 'pull_request'
     runs-on:
-      group: Default
-      labels: [self-hosted, linux, x64, orux-ci]
+      labels: orux-ci
     timeout-minutes: 5
     steps:
       - name: Check Dependency Graph availability
@@ -201,8 +197,7 @@ jobs:
     name: Detect secrets
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on:
-      group: Default
-      labels: [self-hosted, linux, x64, orux-ci]
+      labels: orux-ci
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4

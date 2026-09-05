@@ -10,9 +10,7 @@ permissions:
   packages: write
 jobs:
   publish:
-    runs-on:
-      group: Default
-      labels: [self-hosted, linux, x64, orux-buildkit]
+    runs-on: orux-buildkit
     steps:
       - uses: actions/checkout@v4
         with:
