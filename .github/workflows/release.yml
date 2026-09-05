@@ -98,3 +98,15 @@ jobs:
             echo "- Commit: ${GITHUB_SHA}"
             echo "- Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
           } >> "${GITHUB_STEP_SUMMARY}"
+      - name: Trigger docker-publish workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.create-tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh workflow view "docker-publish.yml" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Triggering docker-publish.yml for ${TAG} in ${GITHUB_REPOSITORY}..."
+            gh workflow run "docker-publish.yml" --repo "${GITHUB_REPOSITORY}" -f release-tag="${TAG}" || echo "Warning: failed to dispatch docker-publish.yml"
+          else
+            echo "No docker-publish.yml found in ${GITHUB_REPOSITORY}, skipping image build."
+          fi
