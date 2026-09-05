@@ -37,6 +37,7 @@ GITHUB_RUNNER_APP_INSTALLATION_ID=<installation-id>
 GITHUB_RUNNER_GROUP_ID=<runner-group-id>
 GITHUB_RUNNER_APP_PRIVATE_KEY_FILE=/etc/orux/secrets/github-runner-app.pem
 GITHUB_RUNNER_LABELS=orux-ci,orux-buildkit,linux,x64
+GITHUB_RUNNER_REPLICAS=5
 ```
 
 ```bash
