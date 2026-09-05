@@ -83,6 +83,11 @@ tag que produjo la imagen, aunque Docker haya consumido `latest`. Las imágenes
 anteriores sin labels se identifican de forma inequívoca como
 `latest@<digest-corto>`.
 
+Las imágenes privadas de GHCR requieren autenticación de lectura en el host
+(`read:packages`). Si GHCR rechaza el pull, el autodeployer detiene esa ronda y
+conserva los contenedores actuales; nunca debe recrearlos aparentando haber
+desplegado una imagen vieja.
+
 Para paquetes privados, el servicio no reutiliza `~/.docker/config.json`. Se
 configuran `GHCR_USERNAME` y `GHCR_TOKEN_FILE`; el archivo debe pertenecer al
 usuario del autodeployer, ser modo `0400` y contener un token clásico con

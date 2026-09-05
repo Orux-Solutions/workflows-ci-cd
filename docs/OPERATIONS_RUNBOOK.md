@@ -38,6 +38,11 @@ incluir `timestamp`, `level`, `service`, `requestId` y `tenantId` cuando exista.
 
 1. Identificar el release y commit fallido desde la URL de release.
 2. Revertir a la última release estable; no modificar datos manualmente.
+
+Si el autodeployer informa `403 Forbidden` o `unauthorized` contra `ghcr.io`,
+verificar el login del usuario del servicio con un token que tenga
+`read:packages`. El autodeployer conserva los contenedores actuales hasta que
+el pull completo sea autorizado.
 3. Validar health/readiness y el flujo con un tenant de prueba.
 4. Documentar causa, duración, impacto y commit restaurado.
 
