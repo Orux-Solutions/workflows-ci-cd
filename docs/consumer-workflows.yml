@@ -19,6 +19,11 @@ jobs:
     with:
       # node-backend | node-frontend | node-pages | docs | shared-ci
       project-type: node-frontend
+      # Circuit breaker manual opcional:
+      # force-github-hosted: true
+    secrets:
+      ORUX_RUNNER_OBSERVER_APP_ID: ${{ secrets.ORUX_RUNNER_OBSERVER_APP_ID }}
+      ORUX_RUNNER_OBSERVER_PRIVATE_KEY: ${{ secrets.ORUX_RUNNER_OBSERVER_PRIVATE_KEY }}
 
 ---
 name: Release

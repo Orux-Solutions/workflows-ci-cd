@@ -81,3 +81,19 @@ workflows-ci-cd/
     ├── validate-commits.sh        # Validador de Conventional Commits
     └── validate-governance.mjs    # Validador de integridad de repositorios
 ```
+
+## Docker Compose modular y runners propios
+
+El despliegue usa un único [`compose.yaml`](compose.yaml) padre con includes
+recursivos para Orux, Cloudflare, monitoreo y GitHub. Requiere Docker Compose
+2.20 o posterior.
+
+- [`docs/COMPOSE_ARCHITECTURE.md`](docs/COMPOSE_ARCHITECTURE.md): módulos,
+  redes, monitoreo, exposición y operación.
+- [`docs/GITHUB_RUNNERS.md`](docs/GITHUB_RUNNERS.md): runners JIT aislados,
+  GitHub Apps, routing, fallback, pruebas y rollback.
+
+Portainer y cAdvisor no forman parte del stack. La versión desplegada y el
+estado de cada aplicación se consultan en Admin; Prometheus/Grafana y
+node-exporter cubren la salud del host. Ningún componente de monitoreo tiene
+acceso al socket Docker.

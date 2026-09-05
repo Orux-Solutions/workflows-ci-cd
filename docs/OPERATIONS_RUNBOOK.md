@@ -41,6 +41,45 @@ incluir `timestamp`, `level`, `service`, `requestId` y `tenantId` cuando exista.
 3. Validar health/readiness y el flujo con un tenant de prueba.
 4. Documentar causa, duración, impacto y commit restaurado.
 
+## Operación del stack modular
+
+Validar antes de desplegar:
+
+```bash
+docker compose --env-file .env -f compose.yaml config --quiet
+```
+
+Los servicios públicos salen exclusivamente por Cloudflare Tunnel. Los puertos
+locales están ligados a `127.0.0.1`. Consultar la arquitectura completa en
+[`COMPOSE_ARCHITECTURE.md`](COMPOSE_ARCHITECTURE.md).
+
+El runner de GitHub es opcional. Su indisponibilidad no debe bloquear el
+despliegue ni los workflows: el autodeployer omite el perfil si su configuración
+está incompleta y Actions vuelve a runners administrados por GitHub. Consultar
+[`GITHUB_RUNNERS.md`](GITHUB_RUNNERS.md).
+
+Las imágenes privadas `latest` requieren `GHCR_USERNAME` y un
+`GHCR_TOKEN_FILE` propiedad del usuario del autodeployer y modo `0400`, con un
+token de sólo lectura para paquetes. Luego de cambiar la unidad systemd o estas
+credenciales, volver a ejecutar `sudo scripts/deployment/install-autodeployer.sh`.
+
+### Comandos habituales
+
+```bash
+docker compose ps
+docker compose logs -f --tail=200
+docker compose top
+docker stats
+systemctl status orux-deployer.service
+journalctl -u orux-deployer.service -n 200 --no-pager
+```
+
+### Portainer retirado
+
+Portainer fue eliminado del modelo y `docker.orux.ar` del túnel. El volumen
+histórico no se elimina automáticamente. Conservarlo hasta confirmar que no se
+requiere recuperar ninguna configuración y eliminarlo después de forma manual.
+
 ## Escalar un tenant
 
 El routing debe resolver `tenantId` antes de seleccionar servidor o shard. La

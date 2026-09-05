@@ -1,0 +1,19 @@
+tunnel: <tunnel-id>
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - hostname: orux.ar
+    service: http://client-frontend:80
+  - hostname: business.orux.ar
+    service: http://business-frontend:80
+  - hostname: admin.orux.ar
+    service: http://admin-frontend:80
+  - hostname: api.orux.ar
+    service: http://client-backend:3003
+  - hostname: business-api.orux.ar
+    service: http://business-backend:3001
+  - hostname: admin-api.orux.ar
+    service: http://admin-backend:3002
+  - hostname: grafana.orux.ar
+    service: http://grafana:3000
+  - service: http_status:404

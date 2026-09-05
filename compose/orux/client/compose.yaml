@@ -1,0 +1,36 @@
+services:
+  client-backend:
+    image: ${CLIENT_BACKEND_IMAGE:-ghcr.io/orux-solutions/orux-client-backend}:${CLIENT_BACKEND_IMAGE_TAG:-latest}
+    build:
+      context: ../../../../client-backend
+      args:
+        APP_VERSION: ${CLIENT_BACKEND_VERSION:-development}
+        ORUX_COMMIT_ID: ${CLIENT_BACKEND_COMMIT:-unknown}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      CLIENT_FRONTEND_URL: https://orux.ar
+      DATABASE_URL: mongodb://${MONGO_ROOT_USERNAME:-orux}:${MONGO_ROOT_PASSWORD}@mongo:27017/orux?authSource=admin&replicaSet=rs0
+      APP_VERSION: ${CLIENT_BACKEND_VERSION:-v2.1.0}
+      ORUX_TAG: ${CLIENT_BACKEND_VERSION:-v2.1.0}
+      ORUX_COMMIT_ID: ${CLIENT_BACKEND_COMMIT:-unknown}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET is required}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${CLIENT_BACKEND_PORT:-3003}:3003"
+
+  client-frontend:
+    image: ${CLIENT_FRONTEND_IMAGE:-ghcr.io/orux-solutions/orux-client-frontend}:${CLIENT_FRONTEND_IMAGE_TAG:-latest}
+    build:
+      context: ../../../../client-frontend
+      args:
+        ORUX_CLIENT_API: ${ORUX_CLIENT_API:-https://api.orux.ar/api}
+        ORUX_BUSINESS_API: ${ORUX_BUSINESS_API:-https://business-api.orux.ar/api}
+        APP_VERSION: ${CLIENT_FRONTEND_VERSION:-development}
+        ORUX_COMMIT_ID: ${CLIENT_FRONTEND_COMMIT:-unknown}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${CLIENT_FRONTEND_PORT:-8082}:80"
