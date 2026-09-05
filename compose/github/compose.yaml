@@ -28,6 +28,8 @@ services:
 
   github-runner:
     profiles: [github]
+    deploy:
+      replicas: ${GITHUB_RUNNER_REPLICAS:-5}
     image: ${GITHUB_RUNNER_IMAGE:-ghcr.io/orux-solutions/orux-github-runner:2.337.0}
     build:
       context: ../../runner
