@@ -25,7 +25,9 @@ permissions:
 jobs:
   validate:
     name: Validate ${{ inputs.project-type }}
-    runs-on: [self-hosted, linux, x64, orux-ci]
+    runs-on:
+      group: Default
+      labels: [self-hosted, linux, x64, orux-ci]
     timeout-minutes: 15
     steps:
       - name: Checkout application
@@ -109,7 +111,9 @@ jobs:
   dependency-audit:
     name: Audit dependencies
     if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
-    runs-on: [self-hosted, linux, x64, orux-ci]
+    runs-on:
+      group: Default
+      labels: [self-hosted, linux, x64, orux-ci]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
