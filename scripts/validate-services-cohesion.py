@@ -71,17 +71,35 @@ class TaxonomyEngine:
         clean_ep = endpoint.split("?")[0].strip("/")
         parts = clean_ep.split("/")
 
-        # 1. Si la ruta pertenece al scope /auth o a un área transversal directa de area.json
-        if parts:
-            if parts[0] in self.areas:
-                return parts[0], parts[0]
-            for area_key in self.areas:
-                sub = area_key.split(".")[-1]
-                if parts[0] == sub:
-                    return area_key.split(".")[0], area_key
+        if not parts or not parts[0]:
+            return "unknown", "unknown"
 
-        # 2. Si la ruta pertenece al scope /tenant (administración nuclear de core)
-        if parts and parts[0] == "tenant":
+        # 1. Si la ruta pertenece al scope /auth o a un área transversal directa de area.json
+        if parts[0] in self.areas:
+            return parts[0], parts[0]
+        for area_key in self.areas:
+            sub = area_key.split(".")[-1]
+            if parts[0] == sub:
+                return area_key.split(".")[0], area_key
+
+        # 2. Si la ruta coincide con un área compuesta de area.json (ej: platform/tenants, platform/plans, platform/modules)
+        if len(parts) >= 2:
+            candidate = f"{parts[0]}.{parts[1]}"
+            if candidate in self.areas:
+                return parts[0], candidate
+
+        platform_prefixes = {k.split(".")[0] for k in self.areas if "." in k}
+        if parts[0] in platform_prefixes:
+            for area_key in self.areas:
+                if "." in area_key and area_key.startswith(f"{parts[0]}."):
+                    area_sub = area_key.split(".")[1]
+                    if area_sub in parts:
+                        return parts[0], area_key
+            sub = parts[1] if len(parts) > 1 else parts[0]
+            return parts[0], f"{parts[0]}.{sub}"
+
+        # 3. Si la ruta pertenece al scope /tenant (administración nuclear de core)
+        if parts[0] == "tenant":
             for part in reversed(parts[1:]):
                 if part in self.page_to_section and self.page_to_section[part][0] == "core":
                     return self.page_to_section[part]
@@ -90,29 +108,31 @@ class TaxonomyEngine:
             sub = parts[1] if len(parts) > 1 else "tenant"
             return "core", f"core.{sub}"
 
-        # 3. Si el prefijo coincide con una sección canónica de structure.json (ej: /commerce/orders)
-        if parts and parts[0] in self.sections:
+        # 4. Si el prefijo coincide con una sección canónica de structure.json (ej: /commerce/orders)
+        if parts[0] in self.sections:
             sec = parts[0]
             if len(parts) > 1 and parts[1] in self.page_to_section and self.page_to_section[parts[1]][0] == sec:
                 return self.page_to_section[parts[1]]
             sub = parts[1] if len(parts) > 1 else sec
             return sec, f"{sec}.{sub}"
 
-        # 4. Si los segmentos coinciden con una página canónica de structure.json (de izquierda a derecha para priorizar el recurso raíz)
+        # 5. Si los segmentos coinciden con una página canónica de structure.json (de izquierda a derecha para priorizar el recurso raíz)
         for part in parts:
             if part in self.page_to_section:
                 return self.page_to_section[part]
 
-        # 5. Si los segmentos coinciden con un módulo canónico de structure.json (de izquierda a derecha)
+        # 6. Chequear áreas compuestas de area.json
+        for part in parts:
+            for area_key in self.areas:
+                if "." in area_key:
+                    prefix, sub = area_key.split(".", 1)
+                    if part == sub:
+                        return prefix, area_key
+
+        # 7. Si los segmentos coinciden con un módulo canónico de structure.json (de izquierda a derecha)
         for part in parts:
             if part in self.module_to_section:
                 return self.module_to_section[part]
-
-        # 6. Chequear áreas compuestas de area.json (ej: platform.tenants, platform.plans)
-        for part in parts:
-            for area_key in self.areas:
-                if part in area_key.split("."):
-                    return area_key.split(".")[0], area_key
 
         return "unknown", f"unknown({clean_ep})"
 
