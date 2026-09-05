@@ -1,96 +1,83 @@
-# Orux CI
+# ⚙️ Orux CI/CD & DevOps Hub (`workflows-ci-cd`)
 
-Workflows compartidos de integración continua para los repositorios de Orux.
+> Repositorio centralizado de pipelines de Integración Continua, Entrega Continua, validadores arquitectónicos y gobernanza para el ecosistema Orux / Aurea.
 
-## Cómo agregar un repo
+---
 
-Cada aplicación sólo necesita callers pequeños. No hay que copiar pasos ni inventar comandos; el workflow de CI compartido incluye el gate de calidad y los controles de seguridad:
+> [!IMPORTANT]
+> **Fuente de la Verdad Absoluta:**
+> Toda la normativa de integración, gobernanza de branches, contratos de release y políticas de calidad están formalizados en el repositorio [**`documentaciones`**](../documentaciones) (especialmente [`docs/ci.md`](../documentaciones/docs/ci.md)).
+
+---
+
+## 📋 Arquitectura de CI Reutilizable
+
+Los repositorios consumidores (`admin-backend`, `admin-frontend`, `business-backend`, `business-frontend`, `client-backend`, `client-frontend`, `documentaciones`) no duplican lógica de CI. Todos consumen el workflow centralizado reutilizable [`ci.yml`](.github/workflows/ci.yml):
 
 ```yaml
-# .github/workflows/pr-quality.yml
-name: CI
+# .github/workflows/pr-quality.yml en cada repo
+name: PR Quality
 on:
   pull_request:
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   quality:
     uses: Orux-Solutions/workflows-ci-cd/.github/workflows/ci.yml@main
     with:
-      project-type: node-frontend
+      project-type: node-frontend # o node-backend
 ```
 
-Perfiles disponibles:
+### Perfiles Soportados:
+- **`node-frontend`:** Instalación de dependencias, verificación de tipos TypeScript y build de producción con Vite.
+- **`node-backend`:** Instalación de dependencias, Prisma generate, validación estática con linter, suite de tests y build de producción NestJS.
+- **`docs`:** Validación de enlaces, manifests de taxonomía e integridad de gobernanza.
 
-- `node-frontend`: instala dependencias y ejecuta `npm run build`.
-- `node-backend`: instala dependencias, ejecuta `npm run lint`, `npm test` y `npm run build`.
-- `node-pages`: instala dependencias, ejecuta `npm run check`, `npm test` y valida el Dockerfile.
+---
 
-Cada repo agrega además `release.yml` y `docker-publish.yml`. No se agregan `security.yml`, `commit-policy.yml` ni workflows de summary: sus responsabilidades viven en el único workflow de calidad del PR.
+## 🛡️ Controles de Calidad Ejecutados en Cada PR
 
-## Notificaciones cross-repo
+1. **Conventional Commits:** Valida que cada commit del PR cumpla el estándar (`feat:`, `fix:`, `refactor:`, etc.).
+2. **Validación de Arquitectura:**
+   - [`validate-architecture.py`](scripts/validate-architecture.py): Verifica la jerarquía canónica de 3 niveles (`Sección → Página → Módulo`) contra `taxonomy/structure.json` y el isomorfismo `@FeatureDomain`.
+   - [`validate-services-cohesion.py`](scripts/validate-services-cohesion.py): Detecta y bloquea **God Services** o controladores multidominio garantizando Bounded Contexts puros.
+3. **Validación de Gobernanza:** [`validate-governance.mjs`](scripts/validate-governance.mjs) valida coherencia de tags, releases y dependencias.
+4. **Seguridad y Secretos:** Detección de credenciales y secretos con Gitleaks y Dependency Review.
+5. **CodeQL:** Análisis estático avanzado de vulnerabilidades de seguridad.
+6. **PR Quality Report:** Consolida el estado de todos los controles en un único comentario interactivo e idempotente en el PR.
 
-Las notificaciones de imágenes publicadas y despliegues se centralizan en
-`.github/workflows/notify.yml`. Los repositorios consumidores sólo deben llamar
-al workflow reutilizable con `secrets: inherit`; los valores deben existir como
-secretos de la organización `Orux-Solutions`, nunca en el código.
+---
 
-Secretos soportados:
+## 🏷️ Versionado Automático (Autotagging)
 
-- `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID`.
-- `DISCORD_BOT_TOKEN` y `DISCORD_CHANNEL_ID`, o `DISCORD_WEBHOOK_URL`.
+El workflow de release en `main` determina el próximo tag `vX.Y.Z` automáticamente analizando los commits integrados:
+- `fix`, `perf` $\rightarrow$ Incrementa versión **Patch** (`v1.0.X`).
+- `feat` $\rightarrow$ Incrementa versión **Minor** (`v1.X.0`).
+- Breaking Changes o acumulación de 10 `feat` $\rightarrow$ Incrementa versión **Major** (`vX.0.0`).
 
-Variables opcionales de organización:
+---
 
-- `ORUX_DEPLOY_URL`: URL pública común o por repositorio para incluir en avisos.
+## 📁 Estructura de Scripts de Validación
 
-Los repos nuevos deben copiar únicamente los callers documentados en
-`docs/consumer-workflows.yml` y apuntar a la referencia latest (`@main`).
-
-## Versionado automático
-
-El autotagger usa Conventional Commits:
-
-- `fix` y `perf` incrementan patch.
-- `feat` incrementa minor.
-- Un breaking change incrementa major.
-- Diez `feat` desde el último tag incrementan major aunque no haya breaking change.
-
-El umbral se puede cambiar con `ORUX_FEATURES_FOR_MAJOR`, siempre con un entero positivo.
-
-## Regla de mantenimiento
-
-Los cambios de CI se hacen en este repo, se prueban con `scripts/test-release-scripts.sh` y luego se actualiza el tag `v1`. Los repos de aplicación no deben contener scripts de CI propios.
-
-## Autodeployer local
-
-Para instalaciones Orux con un `compose.yaml` en servidor propio, el autodeployer
-periódicamente hace pull, recrea los servicios configurados y valida un endpoint
-de salud. Se ejecuta una vez con `--once` o en modo continuo con `--interval`:
-
-```bash
-ORUX_DEPLOY_SERVICES="backend frontend" \
-python3 scripts/deployment/local-deployer.py \
-  --compose /srv/orux/compose.yaml --env-file /srv/orux/.env \
-  --health-url http://127.0.0.1/health --once
+```text
+workflows-ci-cd/
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                 # Workflow reusable central de calidad de PRs
+│       ├── release.yml            # Pipeline de autotagging y GitHub Releases
+│       └── notify.yml             # Notificaciones a Discord y Telegram
+├── docs/
+│   ├── OPERATIONS_RUNBOOK.md      # Runbook operativo para despliegues
+│   └── pr-gate-contract.md        # Contrato normativo de los gates de PR
+└── scripts/
+    ├── validate-architecture.py   # Validador de jerarquía 3 niveles e isomorfismo
+    ├── validate-services-cohesion.py # Detector de God Services y cohesión
+    ├── validate-commits.sh        # Validador de Conventional Commits
+    └── validate-governance.mjs    # Validador de integridad de repositorios
 ```
-
-En Linux se puede instalar como servicio con `sudo scripts/deployment/install-autodeployer.sh`.
-Es opcional y no reemplaza el despliegue existente a Render.
-
-### Túnel gratuito de Cloudflare
-
-El autodeployer levanta automáticamente el servicio `cloudflared` cuando el archivo
-`.env` contiene `CLOUDFLARE_TUNNEL_TOKEN`. El túnel se crea una sola vez desde
-Cloudflare Zero Trust como túnel administrado remotamente; allí también se configura
-el hostname `orux.ar` y el servicio local (por ejemplo `http://business-frontend:80`).
-Luego se copia el token en `.env`:
-
-```bash
-CLOUDFLARE_TUNNEL_TOKEN=<token-del-tunel>
-```
-
-También se puede usar `CLOUDFLARE_TUNNEL_TOKEN_FILE` para mantener el token fuera
-del `.env`. El archivo puede contener solo el token o una línea
-`CLOUDFLARE_TUNNEL_TOKEN=...`.
-
-No se publica el token en el repositorio. Si la variable está vacía, el autodeployer
-funciona como antes y no inicia Cloudflare.
