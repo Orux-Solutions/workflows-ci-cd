@@ -1,0 +1,92 @@
+services:
+  buildkit:
+    profiles: [github]
+    image: moby/buildkit:v0.33.0-rootless
+    restart: unless-stopped
+    command:
+      - --addr=tcp://0.0.0.0:1234
+      - --oci-worker-no-process-sandbox
+    expose:
+      - "1234"
+    volumes:
+      - buildkit-cache:/home/user/.local/share/buildkit
+    networks:
+      - github-build
+      - github-egress
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    healthcheck:
+      test: ["CMD", "buildctl", "--addr", "tcp://127.0.0.1:1234", "debug", "workers"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  github-runner:
+    profiles: [github]
+    image: ${GITHUB_RUNNER_IMAGE:-ghcr.io/orux-solutions/orux-github-runner:2.337.0}
+    build:
+      context: ../../runner
+      args:
+        RUNNER_VERSION: "2.337.0"
+    restart: always
+    user: "0:0"
+    read_only: true
+    init: true
+    depends_on:
+      buildkit:
+        condition: service_healthy
+    environment:
+      GITHUB_ORG: ${GITHUB_RUNNER_ORG:-Orux-Solutions}
+      GITHUB_APP_ID: ${GITHUB_RUNNER_APP_ID:-}
+      GITHUB_APP_INSTALLATION_ID: ${GITHUB_RUNNER_APP_INSTALLATION_ID:-}
+      GITHUB_RUNNER_GROUP_ID: ${GITHUB_RUNNER_GROUP_ID:-}
+      GITHUB_RUNNER_LABELS: ${GITHUB_RUNNER_LABELS:-orux-ci,orux-buildkit,linux,x64}
+      GITHUB_RUNNER_NAME_PREFIX: ${GITHUB_RUNNER_NAME_PREFIX:-orux}
+      GITHUB_APP_PRIVATE_KEY_FILE: /run/secrets/github-runner-app.pem
+      ACTIONS_RUNNER_PRINT_LOG_TO_STDOUT: "1"
+    volumes:
+      - type: bind
+        source: ${GITHUB_RUNNER_APP_PRIVATE_KEY_FILE:-/etc/orux/secrets/github-runner-app.pem}
+        target: /run/secrets/github-runner-app.pem
+        read_only: true
+        bind:
+          create_host_path: false
+    tmpfs:
+      - /runner:rw,exec,nosuid,nodev,size=${GITHUB_RUNNER_WORKSPACE_SIZE:-6g},uid=1001,gid=123,mode=0750
+      - /tmp:rw,nosuid,nodev,size=512m,uid=1001,gid=123,mode=1770
+    networks:
+      - github-build
+      - github-egress
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: ${GITHUB_RUNNER_PIDS_LIMIT:-512}
+    cpus: ${GITHUB_RUNNER_CPUS:-2}
+    mem_limit: ${GITHUB_RUNNER_MEMORY:-6g}
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/runner-healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    logging:
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+networks:
+  github-build:
+    internal: true
+  github-egress:
+
+volumes:
+  buildkit-cache:

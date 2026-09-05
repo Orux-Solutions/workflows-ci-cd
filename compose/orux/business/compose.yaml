@@ -1,0 +1,37 @@
+services:
+  business-backend:
+    image: ${BUSINESS_BACKEND_IMAGE:-ghcr.io/orux-solutions/backoffice-be-orux}:${BUSINESS_BACKEND_IMAGE_TAG:-latest}
+    build:
+      context: ../../../../business-backend
+      args:
+        APP_VERSION: ${BUSINESS_BACKEND_VERSION:-development}
+        ORUX_COMMIT_ID: ${BUSINESS_BACKEND_COMMIT:-unknown}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      FRONTEND_URL: https://business.orux.ar
+      DATABASE_URL: mongodb://${MONGO_ROOT_USERNAME:-orux}:${MONGO_ROOT_PASSWORD}@mongo:27017/orux?authSource=admin&replicaSet=rs0
+      APP_VERSION: ${BUSINESS_BACKEND_VERSION:-v2.1.0}
+      ORUX_TAG: ${BUSINESS_BACKEND_VERSION:-v2.1.0}
+      ORUX_COMMIT_ID: ${BUSINESS_BACKEND_COMMIT:-unknown}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET is required}
+      JWT_ACCESS_EXPIRES_IN: "15m"
+      JWT_REFRESH_EXPIRES_IN: "7d"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${BUSINESS_BACKEND_PORT:-3001}:3001"
+
+  business-frontend:
+    image: ${BUSINESS_FRONTEND_IMAGE:-ghcr.io/orux-solutions/backoffice-fe-orux}:${BUSINESS_FRONTEND_IMAGE_TAG:-latest}
+    build:
+      context: ../../../../business-frontend
+      args:
+        ORUX_BUSINESS_API: ${ORUX_BUSINESS_API:-https://business-api.orux.ar/api}
+        APP_VERSION: ${BUSINESS_FRONTEND_VERSION:-development}
+        ORUX_COMMIT_ID: ${BUSINESS_FRONTEND_COMMIT:-unknown}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${BUSINESS_FRONTEND_PORT:-8083}:80"

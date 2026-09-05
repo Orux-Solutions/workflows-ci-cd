@@ -1,0 +1,42 @@
+services:
+  admin-backend:
+    image: ${ADMIN_BACKEND_IMAGE:-ghcr.io/orux-solutions/orux-admin-backend}:${ADMIN_BACKEND_IMAGE_TAG:-latest}
+    build:
+      context: ../../../../admin-backend
+      args:
+        APP_VERSION: ${ADMIN_BACKEND_VERSION:-development}
+        ORUX_COMMIT_ID: ${ADMIN_BACKEND_COMMIT:-unknown}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      FRONTEND_URL: https://admin.orux.ar
+      DATABASE_URL: mongodb://${MONGO_ROOT_USERNAME:-orux}:${MONGO_ROOT_PASSWORD}@mongo:27017/orux?authSource=admin&replicaSet=rs0
+      APP_VERSION: ${ADMIN_BACKEND_VERSION:-v2.2.0}
+      ORUX_TAG: ${ADMIN_BACKEND_VERSION:-v2.2.0}
+      ORUX_COMMIT_ID: ${ADMIN_BACKEND_COMMIT:-unknown}
+      BUSINESS_BACKEND_URL: http://business-backend:3001
+      CLIENT_BACKEND_URL: http://client-backend:3003
+      ADMIN_FRONTEND_VERSION: ${ADMIN_FRONTEND_VERSION:-v2.2.0}
+      BUSINESS_FRONTEND_VERSION: ${BUSINESS_FRONTEND_VERSION:-v2.1.0}
+      CLIENT_FRONTEND_VERSION: ${CLIENT_FRONTEND_VERSION:-v2.1.0}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET is required}
+      JWT_ACCESS_EXPIRES_IN: "1h"
+      JWT_REFRESH_EXPIRES_IN: "7d"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${ADMIN_BACKEND_PORT:-3002}:3002"
+
+  admin-frontend:
+    image: ${ADMIN_FRONTEND_IMAGE:-ghcr.io/orux-solutions/orux-admin-frontend}:${ADMIN_FRONTEND_IMAGE_TAG:-latest}
+    build:
+      context: ../../../../admin-frontend
+      args:
+        ORUX_ADMIN_API: ${ORUX_ADMIN_API:-https://admin-api.orux.ar/api}
+        APP_VERSION: ${ADMIN_FRONTEND_VERSION:-development}
+        ORUX_COMMIT_ID: ${ADMIN_FRONTEND_COMMIT:-unknown}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${ADMIN_FRONTEND_PORT:-8084}:80"
