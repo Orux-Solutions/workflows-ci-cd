@@ -19,7 +19,7 @@ ROOT = Path.cwd()
 
 
 class TaxonomyEngine:
-    """Motor de taxonomía dinámico cargado directamente desde orux-docs."""
+    """Motor de taxonomía dinámico cargado directamente desde documentaciones / orux-docs."""
 
     def __init__(self):
         self.sections: dict[str, dict] = {}
@@ -31,8 +31,11 @@ class TaxonomyEngine:
     def _find_file(self, filename: str) -> Path | None:
         candidates = [
             ROOT / "docs" / "modules-dynamic" / "taxonomy" / filename,
+            ROOT / ".documentaciones" / "docs" / "modules-dynamic" / "taxonomy" / filename,
             ROOT / ".orux-docs" / "docs" / "modules-dynamic" / "taxonomy" / filename,
+            ROOT.parent / "documentaciones" / "docs" / "modules-dynamic" / "taxonomy" / filename,
             ROOT.parent / "orux-docs" / "docs" / "modules-dynamic" / "taxonomy" / filename,
+            Path(__file__).resolve().parent.parent.parent / "documentaciones" / "docs" / "modules-dynamic" / "taxonomy" / filename,
             Path(__file__).resolve().parent.parent.parent / "orux-docs" / "docs" / "modules-dynamic" / "taxonomy" / filename,
         ]
         for c in candidates:
@@ -330,7 +333,7 @@ def main() -> int:
                 print(f"     * {m_name}() [Línea {m_info.line_no}]: {verb} {path} -> Dominio: {dom}")
         print()
 
-    print("::error::Se detectaron God Services violando la Regla 6 y 7 de orux-docs.")
+    print("::error::Se detectaron God Services violando la Regla 6 y 7 de documentaciones.")
     print("=" * 80 + "\n")
     return 1
 

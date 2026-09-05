@@ -1,6 +1,15 @@
+name: orux
+
 services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --protocol http2 --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./cloudflared:/etc/cloudflared:ro
+
   mongo:
-    image: mongo:8
+    image: mongo:7.0
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-orux}
@@ -22,7 +31,7 @@ services:
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
-    ports: ["${PROMETHEUS_PORT:-9090}:9090"]
+    ports: ["0.0.0.0:${PROMETHEUS_PORT:-9090}:9090"]
 
   grafana:
     image: grafana/grafana:12.1.1
@@ -36,58 +45,95 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-    ports: ["${GRAFANA_PORT:-3000}:3000"]
+    ports: ["0.0.0.0:${GRAFANA_PORT:-3000}:3000"]
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer-data:/data
+    ports: ["0.0.0.0:${PORTAINER_PORT:-9000}:9000"]
 
   business-backend:
     image: ${BUSINESS_BACKEND_IMAGE:-ghcr.io/orux-solutions/backoffice-be-orux}:${BUSINESS_BACKEND_VERSION:-latest}
+    build:
+      context: ../business-backend
     restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 3001
+      FRONTEND_URL: https://business.orux.ar
       DATABASE_URL: mongodb://${MONGO_ROOT_USERNAME:-orux}:${MONGO_ROOT_PASSWORD}@mongo:27017/orux?authSource=admin
       ORUX_COMMIT_ID: ${BUSINESS_BACKEND_COMMIT:-unknown}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-orux_jwt_access_secret_production_key_2026}
+      JWT_ACCESS_EXPIRES_IN: "15m"
+      JWT_REFRESH_EXPIRES_IN: "7d"
     depends_on:
       mongo: { condition: service_healthy }
-    ports: ["${BUSINESS_BACKEND_PORT:-3001}:3001"]
+    ports: ["0.0.0.0:${BUSINESS_BACKEND_PORT:-3001}:3001"]
 
   admin-backend:
     image: ${ADMIN_BACKEND_IMAGE:-ghcr.io/orux-solutions/orux-admin-backend}:${ADMIN_BACKEND_VERSION:-latest}
+    build:
+      context: ../admin-backend
     restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 3002
+      FRONTEND_URL: https://admin.orux.ar
       DATABASE_URL: mongodb://${MONGO_ROOT_USERNAME:-orux}:${MONGO_ROOT_PASSWORD}@mongo:27017/orux?authSource=admin
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-orux_jwt_access_secret_production_key_2026}
+      JWT_ACCESS_EXPIRES_IN: "1h"
+      JWT_REFRESH_EXPIRES_IN: "7d"
     depends_on:
       mongo: { condition: service_healthy }
-    ports: ["${ADMIN_BACKEND_PORT:-3002}:3002"]
+    ports: ["0.0.0.0:${ADMIN_BACKEND_PORT:-3002}:3002"]
 
   client-backend:
     image: ${CLIENT_BACKEND_IMAGE:-ghcr.io/orux-solutions/orux-client-backend}:${CLIENT_BACKEND_VERSION:-latest}
+    build:
+      context: ../client-backend
     restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 3003
+      CLIENT_FRONTEND_URL: https://orux.ar
       DATABASE_URL: mongodb://${MONGO_ROOT_USERNAME:-orux}:${MONGO_ROOT_PASSWORD}@mongo:27017/orux?authSource=admin
     depends_on:
       mongo: { condition: service_healthy }
-    ports: ["${CLIENT_BACKEND_PORT:-3003}:3003"]
+    ports: ["0.0.0.0:${CLIENT_BACKEND_PORT:-3003}:3003"]
 
   business-frontend:
     image: ${BUSINESS_FRONTEND_IMAGE:-ghcr.io/orux-solutions/backoffice-fe-orux}:${BUSINESS_FRONTEND_VERSION:-latest}
+    build:
+      context: ../business-frontend
+      args:
+        ORUX_BUSINESS_API: ${ORUX_BUSINESS_API:-https://business-api.orux.ar/api}
     restart: unless-stopped
-    ports: ["${BUSINESS_FRONTEND_PORT:-8080}:80"]
+    ports: ["0.0.0.0:${BUSINESS_FRONTEND_PORT:-8083}:80"]
 
   admin-frontend:
     image: ${ADMIN_FRONTEND_IMAGE:-ghcr.io/orux-solutions/orux-admin-frontend}:${ADMIN_FRONTEND_VERSION:-latest}
+    build:
+      context: ../admin-frontend
+      args:
+        ORUX_ADMIN_API: ${ORUX_ADMIN_API:-https://admin-api.orux.ar/api/v1}
     restart: unless-stopped
-    ports: ["${ADMIN_FRONTEND_PORT:-8081}:80"]
+    ports: ["0.0.0.0:${ADMIN_FRONTEND_PORT:-8084}:80"]
 
   client-frontend:
     image: ${CLIENT_FRONTEND_IMAGE:-ghcr.io/orux-solutions/orux-client-frontend}:${CLIENT_FRONTEND_VERSION:-latest}
+    build:
+      context: ../client-frontend
+      args:
+        ORUX_CLIENT_API: ${ORUX_CLIENT_API:-https://api.orux.ar/api}
+        ORUX_BUSINESS_API: ${ORUX_BUSINESS_API:-https://business-api.orux.ar/api}
     restart: unless-stopped
-    ports: ["${CLIENT_FRONTEND_PORT:-8082}:80"]
+    ports: ["0.0.0.0:${CLIENT_FRONTEND_PORT:-8082}:80"]
 
 volumes:
   mongo-data:
   prometheus-data:
   grafana-data:
+  portainer-data:

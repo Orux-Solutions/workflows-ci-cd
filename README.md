@@ -76,3 +76,22 @@ python3 scripts/deployment/local-deployer.py \
 
 En Linux se puede instalar como servicio con `sudo scripts/deployment/install-autodeployer.sh`.
 Es opcional y no reemplaza el despliegue existente a Render.
+
+### Túnel gratuito de Cloudflare
+
+El autodeployer levanta automáticamente el servicio `cloudflared` cuando el archivo
+`.env` contiene `CLOUDFLARE_TUNNEL_TOKEN`. El túnel se crea una sola vez desde
+Cloudflare Zero Trust como túnel administrado remotamente; allí también se configura
+el hostname `orux.ar` y el servicio local (por ejemplo `http://business-frontend:80`).
+Luego se copia el token en `.env`:
+
+```bash
+CLOUDFLARE_TUNNEL_TOKEN=<token-del-tunel>
+```
+
+También se puede usar `CLOUDFLARE_TUNNEL_TOKEN_FILE` para mantener el token fuera
+del `.env`. El archivo puede contener solo el token o una línea
+`CLOUDFLARE_TUNNEL_TOKEN=...`.
+
+No se publica el token en el repositorio. Si la variable está vacía, el autodeployer
+funciona como antes y no inicia Cloudflare.
