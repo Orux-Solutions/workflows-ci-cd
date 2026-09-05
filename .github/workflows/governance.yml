@@ -23,9 +23,3 @@ jobs:
           script: |
             const { validateGovernance } = await import(`${process.cwd()}/.orux-ci/scripts/validate-governance.mjs`);
             await validateGovernance({ github, context, core });
-  summary:
-    if: ${{ always() }}
-    needs: [governance]
-    uses: ./.github/workflows/workflow-summary.yml
-    with:
-      needs_json: ${{ toJSON(needs) }}

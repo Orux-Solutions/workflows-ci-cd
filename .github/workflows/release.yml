@@ -2,17 +2,6 @@ name: Orux Release
 
 on:
   workflow_call:
-    inputs:
-      deploy-url:
-        description: Optional deployed URL included in release evidence
-        required: false
-        default: ''
-        type: string
-      deploy-workflow:
-        description: Workflow to dispatch after publishing the release
-        required: false
-        default: ''
-        type: string
 
 permissions:
   actions: write
@@ -99,26 +88,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.create-tag.outputs.tag }}
-          DEPLOY_URL: ${{ inputs.deploy-url }}
-          DEPLOY_WORKFLOW: ${{ inputs.deploy-workflow }}
         run: |
           set -euo pipefail
           notes="Release ${TAG}\\n\\nCommit: ${GITHUB_SHA}"
-          [[ -n "${DEPLOY_URL}" ]] && notes+="\\nDemo/deploy: ${DEPLOY_URL}"
           gh release create "${TAG}" --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" --title "${TAG}" --notes "${notes}" --generate-notes
-          if [[ -n "${DEPLOY_WORKFLOW}" ]]; then
-            gh workflow run "${DEPLOY_WORKFLOW}" --repo "${GITHUB_REPOSITORY}" --ref "${TAG}" -f "release-tag=${TAG}"
-          fi
           {
             echo "## Orux release evidence"
             echo "- Version: ${TAG}"
             echo "- Commit: ${GITHUB_SHA}"
-            [[ -n "${DEPLOY_URL}" ]] && echo "- Demo/deploy: ${DEPLOY_URL}"
             echo "- Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
           } >> "${GITHUB_STEP_SUMMARY}"
-  summary:
-    if: ${{ always() }}
-    needs: [calculate-version, create-tag, create-release]
-    uses: ./.github/workflows/workflow-summary.yml
-    with:
-      needs_json: ${{ toJSON(needs) }}

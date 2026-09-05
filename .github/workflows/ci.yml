@@ -1,4 +1,4 @@
-name: Orux CI
+name: Orux PR Quality
 
 on:
   workflow_call:
@@ -12,14 +12,13 @@ on:
         description: Node.js major version
         type: string
         required: false
-        default: '22'
+        default: "22"
 
 permissions:
   actions: read
   contents: read
   security-events: write
   pull-requests: write
-  issues: write
 
 jobs:
   validate:
@@ -109,6 +108,7 @@ jobs:
     name: Audit dependencies
     if: inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -125,6 +125,7 @@ jobs:
     name: Validate commits
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
         with:
@@ -144,6 +145,7 @@ jobs:
     name: Dependency Review
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Check Dependency Graph availability
         id: dependency-graph
@@ -168,9 +170,9 @@ jobs:
 
   codeql:
     name: CodeQL
-    continue-on-error: true
     if: (inputs.project-type == 'node-backend' || inputs.project-type == 'node-frontend' || inputs.project-type == 'node-pages') && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -186,6 +188,7 @@ jobs:
     name: Detect secrets
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -212,27 +215,83 @@ jobs:
           fi
           gitleaks git --redact --exit-code 1 --log-opts="${range}"
 
-  gate:
-    name: PR Gate
-    if: always()
-    needs: [validate, dependency-audit, conventional-commits, dependency-review, codeql, gitleaks]
+  governance:
+    name: Governance metadata
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     steps:
-      - name: Consolidate required checks
+      - name: Checkout shared CI
+        uses: actions/checkout@v4
+        with:
+          repository: Orux-Solutions/workflows-ci-cd
+          ref: main
+          path: .orux-ci
+          token: ${{ github.token }}
+          persist-credentials: false
+      - name: Validate governance metadata
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { validateGovernance } = await import(`${process.cwd()}/.orux-ci/scripts/validate-governance.mjs`);
+            await validateGovernance({ github, context, core });
+
+  pr-report:
+    name: PR Quality Report
+    if: always()
+    needs:
+      [
+        validate,
+        dependency-audit,
+        conventional-commits,
+        dependency-review,
+        codeql,
+        gitleaks,
+        governance,
+      ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Publish PR report
+        uses: actions/github-script@v7
         env:
-          RESULTS: ${{ needs.validate.result }} ${{ needs.dependency-audit.result }} ${{ needs.conventional-commits.result }} ${{ needs.dependency-review.result }} ${{ needs.codeql.result }} ${{ needs.gitleaks.result }}
-        run: |
-          set -euo pipefail
-          for result in ${RESULTS}; do
-            case "${result}" in
-              success|skipped) ;;
-              *) echo "PR Gate failed because a required check finished as ${result}." >&2; exit 1 ;;
-            esac
-          done
-          echo "PR Gate passed."
-  summary:
-    if: ${{ always() }}
-    needs: [validate, dependency-audit, conventional-commits, dependency-review, codeql, gitleaks, gate]
-    uses: ./.github/workflows/workflow-summary.yml
-    with:
-      needs_json: ${{ toJSON(needs) }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        with:
+          script: |
+            const marker = '<!-- orux-ci-report -->';
+            const results = JSON.parse(process.env.NEEDS_JSON);
+            const labels = {
+              validate: 'Validate',
+              'dependency-audit': 'Dependency audit',
+              'conventional-commits': 'Commit policy',
+              'dependency-review': 'Dependency review',
+              codeql: 'CodeQL',
+              gitleaks: 'Secret scan',
+              governance: 'Governance'
+            };
+            const icon = value => value === 'success' ? '✅' : value === 'skipped' ? '⏭️' : '❌';
+            const rows = Object.entries(results).filter(([name]) => labels[name]).map(([name, value]) => `| ${labels[name]} | ${icon(value.result)} ${value.result} |`).join('\n');
+            const failed = Object.values(results).some(value => ['failure', 'cancelled', 'timed_out'].includes(value.result));
+            const body = `${marker}\n## Orux · PR Quality\n\n| Check | Estado |\n|---|---|\n${rows}\n\n${failed ? '⛔ Se solicitaron cambios porque falló un check obligatorio.' : '✅ Todos los checks obligatorios pasaron; listo para revisión humana.'}\n\n[Ver ejecución](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+            if (context.eventName === 'pull_request') {
+              const comments = await github.paginate(github.rest.issues.listComments, { owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, per_page: 100 });
+              const existing = comments.find(comment => comment.user?.type === 'Bot' && comment.body?.includes(marker));
+              if (existing) await github.rest.issues.updateComment({ owner: context.repo.owner, repo: context.repo.repo, comment_id: existing.id, body });
+              else await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
+              const reviews = await github.paginate(github.rest.pulls.listReviews, { owner: context.repo.owner, repo: context.repo.repo, pull_number: context.issue.number, per_page: 100 });
+              const botReview = reviews.find(review => review.user?.type === 'Bot' && review.commit_id === context.sha && review.state === 'CHANGES_REQUESTED');
+              if (failed) {
+                if (!botReview) await github.rest.pulls.createReview({ owner: context.repo.owner, repo: context.repo.repo, pull_number: context.issue.number, event: 'REQUEST_CHANGES', body: 'Los checks obligatorios de Orux tienen fallos. Revisá el comentario de PR Quality y corregí los checks marcados.' });
+              } else if (botReview) {
+                await github.rest.pulls.dismissReview({ owner: context.repo.owner, repo: context.repo.repo, pull_number: context.issue.number, review_id: botReview.id, message: 'Los checks de Orux volvieron a pasar.' });
+              }
+            }
+            if (failed) core.setFailed('Uno o más checks obligatorios fallaron.');
