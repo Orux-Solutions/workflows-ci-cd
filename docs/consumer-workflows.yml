@@ -44,12 +44,6 @@ name: Publish Docker image
 on:
   release:
     types: [published]
-  workflow_dispatch:
-    inputs:
-      release-tag:
-        description: Release tag to publish
-        required: true
-        type: string
 permissions:
   contents: read
   packages: write
@@ -58,6 +52,6 @@ jobs:
     uses: Orux-Solutions/workflows-ci-cd/.github/workflows/docker-publish.yml@main
     with:
       image: ghcr.io/orux-solutions/REPOSITORY_NAME
-      version: ${{ inputs.release-tag || github.event.release.tag_name }}
-      ref: ${{ inputs.release-tag || github.event.release.tag_name || github.ref }}
+      version: ${{ github.event.release.tag_name }}
+      ref: ${{ github.event.release.tag_name }}
     secrets: inherit
