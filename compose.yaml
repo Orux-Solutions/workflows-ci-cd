@@ -118,7 +118,7 @@ services:
     build:
       context: ../admin-frontend
       args:
-        ORUX_ADMIN_API: ${ORUX_ADMIN_API:-https://admin-api.orux.ar/api/v1}
+        ORUX_ADMIN_API: ${ORUX_ADMIN_API:-https://admin-api.orux.ar/api}
     restart: unless-stopped
     ports: ["0.0.0.0:${ADMIN_FRONTEND_PORT:-8084}:80"]
 

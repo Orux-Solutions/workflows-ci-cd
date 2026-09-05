@@ -37,6 +37,7 @@ def load_taxonomy() -> tuple[dict[str, set[str]], dict[str, str]]:
     # 1. Look for taxonomy/structure.json in documentaciones / orux-docs (workspace or checkout)
     candidates = [
         ROOT / "docs" / "modules-dynamic" / "taxonomy" / "structure.json",
+        ROOT / "documentaciones" / "docs" / "modules-dynamic" / "taxonomy" / "structure.json",
         ROOT / ".documentaciones" / "docs" / "modules-dynamic" / "taxonomy" / "structure.json",
         ROOT / ".orux-docs" / "docs" / "modules-dynamic" / "taxonomy" / "structure.json",
         ROOT.parent / "documentaciones" / "docs" / "modules-dynamic" / "taxonomy" / "structure.json",
